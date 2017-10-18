@@ -3,7 +3,6 @@
 namespace App\Core\Http\Router;
 
 use App\Core\Http\Uri;
-use Exception;
 
 /**
  * Represents a path with or without arguments
@@ -12,7 +11,6 @@ use Exception;
  */
 final class Route
 {
-
     public const VARIABLE_REGEX = <<<'REGEX'
 \{
     \s* ([a-zA-Z_][a-zA-Z0-9_-]*) \s*
@@ -24,45 +22,45 @@ REGEX;
     public const DEFAULT_DISPATCH_REGEX = '[^/]+';
 
     /**
-     * @var string
-     * the name of the route (e.g 'route.name')
+     * @var string the name of the route used to re-build it
      */
     private $name;
 
     /**
-     * @var string
-     * the path given by the user
+     * @var string the path as given by the user
      */
     private $path;
 
     /**
-     * @var Path the normal Path to match for this route
-     * e.g in '/test[/opt]' this is '/test'
+     * @var string the reg-exp matching the path's pattern
      */
-    private $normalPath;
+    private $regex;
 
     /**
-     * @var Path[] the optionnals Path for this route
-     * e.g in '/test[/opt]' this is '/test/opt'
+     * @var string the path with the placeholders like '{name: filter}'
+     * replaced by '{{name}}' for more easy re-building
      */
-    private $optionnalPaths;
+    private $template;
 
     /**
-     * @var string
-     * the handler for the route (generally a controller)
+     * @var string the function or class that'll be called when the route will be matched
      */
     private $handler;
 
     /**
-     * @var Middleware[]
-     * the middlewares for this route
+     * @var array the parameters of the route (placeholders) and their filters
+     */
+    private $parameters;
+
+    /**
+     * @var Middleware[] the middlewares to call before this route's handler
      */
     private $middlewares;
 
     /**
      * Route constructor.
      * @param string $name
-     * @param string $path the path wanted to be matched
+     * @param string $path
      * @param string $handler
      */
     public function __construct(string $name, string $path, string $handler)
@@ -72,106 +70,134 @@ REGEX;
         $this->handler = $handler;
         $this->middlewares = [];
 
-        $paths = $this->parseOptionnals($path);
-        $this->normalPath = new Path($paths[0]);
-        $this->optionnalPaths = array_map(
-            function (string $path) {
-                return new Path($path);
-            },
-            array_slice($paths, 1)
-        );
+        $this->parsePath($path);
     }
 
     /**
-     * preprocess a path to determine possibles routes from optionnals
-     * e.g '/test[/opt]' becomes '/test' and '/test/opt'
-     * @param string $path
-     * @return array
-     * @throws Exception
+     * escape reserved caracters from a string and format it in a regex for PCRE
+     * @param string $str
+     * @return string
      */
-    private function parseOptionnals(string $path): array
+    private function regexify(string $str): string
     {
-        $routeWithoutClosingOptionals = rtrim($path, ']');
-        $numOptionals = strlen($path) - strlen($routeWithoutClosingOptionals);
+        return '~^' . str_replace('/','\/',$str) . '$~';
+    }
 
-        // Split on [ while skipping placeholders
-        $segments = preg_split('~' . Route::VARIABLE_REGEX . '(*SKIP)(*F) | \[~x', $routeWithoutClosingOptionals);
-        if ($numOptionals !== count($segments) - 1) {
-            // If there are any ] in the middle of the route, throw a more specific error message
-            if (preg_match('~' . Route::VARIABLE_REGEX . '(*SKIP)(*F) | \]~x', $routeWithoutClosingOptionals)) {
-                throw new Exception("[Router::preprocessOptionnals] Optional segments can only occur at the end of a route");
-            }
-            throw new Exception("[Router::preprocessOptionnals] Number of opening '[' and closing ']' does not match");
+    /**
+     * parse the placeholders of a route
+     * @param string $path
+     */
+    private function parsePath(string $path): void
+    {
+        //no placeholders
+        if (! preg_match_all(
+            '~' . self::VARIABLE_REGEX . '~x', $path, $matches,
+            PREG_OFFSET_CAPTURE | PREG_SET_ORDER
+        )) {
+            $this->regex = $this->regexify($path);
+            return;
         }
+
+        $regex = $path;
+        $template = $path;
+        $parameters = [];
 
         /*
-         * for '/test[/opt]
-         * segment = [
-         *      '/test'
-         *      '/opt'
-         * ]
+         * $set = [
+         *      [
+         *          full match e.g '{name: regex}',
+         *          index
+         *      ]
+         *      [
+         *          name,
+         *          index,
+         *      ]
+         *      [
+         *          regex,
+         *          index
+         *      ]
+         *  ]
          */
-        $currentRoute = '';
-        $routesPossibles = [];
-        foreach ($segments as $n => $segment) {
-            if ($segment === '' && $n !== 0) {
-                throw new Exception("[Router::preprocessOptionnals] Empty optional part");
-            }
-            $currentRoute .= $segment;
-            $routesPossibles[] = $currentRoute;
+        foreach ($matches as $set) {
+            // example done with '/test/{name: regex}/smth'
+            // '/test/'
+            $beforeMatch = substr($regex, 0, strpos($regex, $set[0][0]));
+            // 'regex'
+            $match = isset($set[2])
+                ? trim($set[2][0])
+                : self::DEFAULT_DISPATCH_REGEX;
+            // '/smth'
+            $afterMatch = substr($regex,strpos($regex, $set[0][0]) + strlen($set[0][0]));
+            // '/test/(regex)/smth'
+            $regex = $beforeMatch . '(' . $match . ')' . $afterMatch;
+            $template = $beforeMatch . '{{' . $set[1][0] . '}}' . $afterMatch;
+            // 'name'
+            $parameters[$set[1][0]] = $match;
         }
 
-        // ['/test', '/test/opt']
-        return $routesPossibles;
+        $this->template = $template;
+        $this->regex = $this->regexify($regex);
+        $this->parameters = $parameters;
     }
 
     /**
-     * @param Uri $uri
-     * @return Match|null
-     */
-    public function match(Uri $uri)
-    {
-        foreach ($this->getAllPaths() as $path) {
-            if (preg_match(
-                $path->getRegex(),
-                $uri->getPath(),
-                $parameters
-            )) {
-                $match = new Match($this, $path);
-                $arguments = $path->getParameters();
-                $nb = 0;
-                // $parameters starts at index 1 because index 0 is the full match
-                foreach ($arguments as $argument) {
-                    $match->addParameter($argument, $parameters[++$nb]);
-                }
-
-                return $match;
-            }
-        }
-
-        return null;
-    }
-
-    /**
+     * replace the placeholders of a route with the given values
      * @param array|null $parameters
-     * @return Uri|null
+     * @return Uri|null if $parameters aren't correct
      */
-    public function build(?array $parameters = [])
+    public function buildUri(?array $parameters = [])
     {
-        foreach ($this->getAllPaths() as $path){
-            $rebuiltPath = $path->buildPath($parameters);
-            if($rebuiltPath !== null){
-                return $rebuiltPath;
+        //ensure that we get the needed parameters
+        foreach ($this->parameters as $name => $filter){
+            $regex = '~^' . $filter . '$~';
+            if(
+                ! array_key_exists($name, $parameters)
+                || ! preg_match($regex, $parameters[$name])
+            ){
+                return null;
             }
         }
 
-        return null;
+        // replace every regex group by it's value provided in $parameters
+        $rebuiltPath = preg_replace_callback(
+            '~\{\{([^(]+)\}\}~',
+            function(array $matches) use ($parameters): string {
+                return $parameters[$matches[1]];
+            },
+            $this->template
+        );
+
+        return new Uri($rebuiltPath);
     }
+
+
+    /**
+     * rename the route
+     * @param string $name
+     * @return Route
+     */
+    public function as(string $name): Route
+    {
+        $this->name = $name;
+        return $this;
+    }
+
+    /**
+     * add a middleware to the queue
+     * @param Middleware $middleware
+     * @return Route
+     */
+    public function use(Middleware $middleware): Route
+    {
+        $this->middlewares[] = $middleware;
+        return $this;
+    }
+
 
     /**
      * @return string
      */
-    public function getName()
+    public function getName(): string
     {
         return $this->name;
     }
@@ -187,33 +213,26 @@ REGEX;
     /**
      * @return string
      */
-    public function getHandler()
+    public function getRegex(): string
+    {
+        return $this->regex;
+    }
+
+    /**
+     * @return string
+     */
+    public function getHandler(): string
     {
         return $this->handler;
     }
 
     /**
-     * @return Path
+     * @return array
      */
-    public function getNormalPath(): Path
+    public function getParameters(): array
     {
-        return $this->normalPath;
+        return $this->parameters;
     }
 
-    /**
-     * @return Path[]
-     */
-    public function getOptionnalPaths(): array
-    {
-        return $this->optionnalPaths;
-    }
-
-    /**
-     * @return Path[]
-     */
-    public function getAllPaths(): array
-    {
-        return array_merge([$this->normalPath], $this->optionnalPaths);
-    }
 
 }

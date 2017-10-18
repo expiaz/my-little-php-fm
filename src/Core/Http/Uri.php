@@ -2,6 +2,8 @@
 
 namespace App\Core\Http;
 
+use InvalidArgumentException;
+
 class Uri
 {
     private $defaults;
@@ -20,17 +22,24 @@ class Uri
 
     public function __construct(string $url)
     {
-        $this->defaults = array_merge(
-            [
-                'scheme' => 'http',
-                'host' => '',
-                'port' => '80',
-                'path' => '',
-                'query' => '',
-                'fragment' => ''
-            ],
-            parse_url(WEBURL)
-        );
+        // if begin with the path, concat the host
+        if($url[0] === '/'){
+            $url = WEBHOST . $url;
+        }
+
+        // force to recognize and separate host and path in parse_url function
+        if(strpos($url, '://') === false){
+            $url = WEBSCHEME . '://' . $url;
+        }
+
+        $this->defaults = [
+            'scheme' => WEBSCHEME,
+            'host' => WEBHOST,
+            'port' => '80',
+            'path' => '/',
+            'query' => '',
+            'fragment' => ''
+        ];
 
         $parts = $this->extractParts($url);
         $this->scheme = $parts['scheme'];
@@ -49,15 +58,10 @@ class Uri
             throw new InvalidArgumentException("[Uri::extractParts] Unable to parse $url");
         }
 
-        $parts['scheme'] = $parts['scheme'] ?? $this->defaults['scheme'];
-        $parts['host'] = $parts['host'] ?? $this->defaults['host'];
-
-        $parts['port'] = $parts['port'] ?? $this->defaults['port'];
-        $parts['path'] = $parts['path'] ?? $this->defaults['path'];
-        $parts['query'] = $parts['query'] ?? $this->defaults['query'];
-        $parts['fragment'] = $parts['fragment'] ?? $this->defaults['fragment'];
-
-        return $parts;
+        return array_merge(
+            $this->defaults,
+            $parts
+        );
     }
 
     /**
@@ -116,8 +120,12 @@ class Uri
             $full .= ':' . $this->port;
         }
         $full .= $this->path;
-        $full .= $this->query;
-        $full .= $this->fragment;
+        if(! empty($this->query)){
+            $full .= '?' . $this->query;
+        }
+        if(! empty($this->fragment)){
+            $full .= '#' . $this->fragment;
+        }
 
         return $full;
     }

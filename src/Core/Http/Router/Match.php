@@ -8,13 +8,11 @@ class Match extends ParameterBag
 {
 
     private $route;
-    private $path;
 
-    public function __construct(Route $route, Path $path)
+    public function __construct(Route $route)
     {
         parent::__construct();
         $this->route = $route;
-        $this->path = $path;
     }
 
     public function addParameter(string $name, string $value)
@@ -36,14 +34,6 @@ class Match extends ParameterBag
     public function getRoute(): Route
     {
         return $this->route;
-    }
-
-    /**
-     * @return Path
-     */
-    public function getPath(): Path
-    {
-        return $this->path;
     }
 
 

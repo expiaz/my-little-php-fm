@@ -32,7 +32,7 @@ class ParameterBag implements ArrayAccess
         if(! $this->has($key)){
             return $default;
         }
-        return $key;
+        return $this->fields[$key];
     }
 
 
