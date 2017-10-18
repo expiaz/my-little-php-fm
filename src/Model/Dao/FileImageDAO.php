@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Model;
+namespace App\Model\Dao;
+
+use App\Model\Entity\Image;
 
 # Le 'Data Access Object' d'un ensemble images
 class FileImageDAO extends AbstractDAO
@@ -33,6 +35,3 @@ class FileImageDAO extends AbstractDAO
     }
 
 }
-
-
-?>

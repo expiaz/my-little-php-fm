@@ -1,17 +1,18 @@
 <?php
 
-namespace Tests;
+namespace Tests\Model\Dao;
 
-use App\Model\AbstractDAO;
-use App\Model\DbImageDAO;
-use App\Model\Image;
-use App\Model\ImageDAO;
+use App\Model\Dao\AbstractDAO;
+use App\Model\Dao\DbImageDAO;
+
+use App\Model\Entity\Image;
 use PHPUnit\Framework\TestCase;
 
-class ImageDAOTest extends TestCase{
+class ImageDAOTest extends TestCase
+{
 
     /**
-     * @var ImageDAO
+     * @var DbImageDAO
      */
     private $dao;
 
@@ -20,7 +21,8 @@ class ImageDAOTest extends TestCase{
         $this->dao = new DbImageDAO();
     }
 
-    public function testGetImage(){
+    public function testGetImage()
+    {
         self::assertInstanceOf(Image::class, $this->dao->getImage(1));
         self::assertEquals(1, $this->dao->getImage(1)->getId());
 
@@ -29,11 +31,13 @@ class ImageDAOTest extends TestCase{
         self::assertEquals($this->dao->size(), $this->dao->getImage(999999)->getId());
     }
 
-    public function testReadDir(){
-        $files = AbstractDAO::scanDir(dirname(__DIR__) . "/src/Model/IMG");
+    public function testReadDir()
+    {
+
+        $files = AbstractDAO::scanDir(PUBLIK . 'assets/img');
 
         self::assertContains(
-            "/jons/pictures/airshow_23_bg_101400.jpg",
+            "/pictures/airshow_23_bg_101400.jpg",
             $files
         );
     }

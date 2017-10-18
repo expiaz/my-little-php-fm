@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Model;
+namespace App\Model\Dao;
 
+use App\Model\Entity\Image;
 use PDO;
 use PDOException;
 
@@ -13,7 +14,7 @@ class DbImageDAO extends AbstractDAO
      */
     private $pdo;
 
-    private $dbPath = __DIR__ . DIRECTORY_SEPARATOR . "Database/sqlite/images.db";
+    private $dbPath = SRC . 'Model' . DS . 'database' . DS . 'sqlite' . DS . 'images.db';
 
     /**
      * register every picture found in
@@ -29,7 +30,7 @@ class DbImageDAO extends AbstractDAO
                 'id' => NULL,
                 'name' => $image
             ]);
-            if(! $passed){
+            if (!$passed) {
                 $this->pdo->rollBack();
                 return;
             }
@@ -57,7 +58,7 @@ class DbImageDAO extends AbstractDAO
 
     public function size(): int
     {
-        $sql = "SELECT COUNT(id) as nb FROM images";
+        $sql = "SELECT COUNT(id) AS nb FROM images";
         $query = $this->pdo->prepare($sql);
         $query->execute();
 

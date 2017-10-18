@@ -3,7 +3,7 @@
 <head>
     <title>Site SIL3</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <link rel="stylesheet" type="text/css" href="style.css" media="screen" title="Normal"/>
+    <link rel="stylesheet" type="text/css" href="../../public/assets/style/style.css" media="screen" title="Normal"/>
 </head>
 <body>
 <div id="entete">
@@ -16,7 +16,7 @@
         # Utilisation du modèle
         require_once("../vendor/autoload.php");
         // Débute l'acces aux images
-        $imgDAO = new \App\Model\FileImageDAO();
+        $imgDAO = new \App\Model\Dao\DbImageDAO();
 
         // Construit l'image courante
         // et l'ID courant

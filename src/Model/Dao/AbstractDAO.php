@@ -1,14 +1,18 @@
 <?php
 
-namespace App\Model;
+namespace App\Model\Dao;
+
+
+
+use App\Model\Entity\Image;
 
 abstract class AbstractDAO {
 
     // Chemin LOCAL où se trouvent les images
-    protected const absolutePath = __DIR__ . "/IMG";
+    protected const absolutePath = PUBLIK . 'assets/img';
 
     // Chemin URL où se trouvent les images
-    protected const urlPath = "http://localhost:8080/Model/IMG";
+    protected const urlPath = "http://localhost:8080/assets/img";
 
     /**
      * @param string $path

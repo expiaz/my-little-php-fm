@@ -1,20 +1,19 @@
 <?php
 
-namespace App\Model;
+namespace App\Model\Entity;
 
 # Notion d'image
 class Image
 {
-    private $url = "";
+    private $url;
     private $id = 0;
 
-    function __construct($url, $id)
+    function __construct(string $url, int $id)
     {
         $this->url = $url;
         $this->id = $id;
     }
 
-    # Retourne l'URL de cette image
     function getURL(): string
     {
         return $this->url;
@@ -25,6 +24,3 @@ class Image
         return $this->id;
     }
 }
-
-
-?>
