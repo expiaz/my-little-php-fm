@@ -1,6 +1,6 @@
 <?php
 
-namespace Core\App\Http;
+namespace App\Core\Http;
 
 use ArrayAccess;
 

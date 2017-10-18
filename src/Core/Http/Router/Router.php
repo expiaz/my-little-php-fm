@@ -3,11 +3,10 @@
 namespace App\Core\Http\Router;
 
 use App\Core\Http\Request;
-use PHPUnit\Runner\Exception;
+use App\Core\Http\Uri;
 
 final class Router
 {
-
 
     /**
      * @var Route[]
@@ -30,55 +29,18 @@ final class Router
         $this->routesMap = [];
     }
 
-    /**
-     * preprocess a path to determine possibles routes from optionnals
-     * e.g '/test[/opt]' becomes '/test' and '/test/opt'
-     * @param string $path
-     * @return array
-     */
-    private function preprocessOptionnals(string $path): array
-    {
-        $routeWithoutClosingOptionals = rtrim($path, ']');
-        $numOptionals = strlen($path) - strlen($routeWithoutClosingOptionals);
-
-        // Split on [ while skipping placeholders
-        $segments = preg_split('~' . Route::VARIABLE_REGEX . '(*SKIP)(*F) | \[~x', $routeWithoutClosingOptionals);
-        if ($numOptionals !== count($segments) - 1) {
-            // If there are any ] in the middle of the route, throw a more specific error message
-            if (preg_match('~' . Route::VARIABLE_REGEX . '(*SKIP)(*F) | \]~x', $routeWithoutClosingOptionals)) {
-                throw new Exception("[Router::preprocessOptionnals] Optional segments can only occur at the end of a route");
-            }
-            throw new Exception("[Router::preprocessOptionnals] Number of opening '[' and closing ']' does not match");
-        }
-
-        /*
-         * for '/test[/opt]
-         * segment = [
-         *      '/test'
-         *      '/opt'
-         * ]
-         */
-        $currentRoute = '';
-        $routesPossibles = [];
-        foreach ($segments as $n => $segment) {
-            if ($segment === '' && $n !== 0) {
-                throw new Exception("[Router::preprocessOptionnals] Empty optional part");
-            }
-            $currentRoute .= $segment;
-            $routesPossibles[] = $currentRoute;
-        }
-
-        // ['/test', '/test/opt']
-        return $routesPossibles;
-    }
-
     private function add(string $method, string $path, $handler, string $name): Route
     {
-        foreach ($this->preprocessOptionnals($path) as $routePath){
-            $route = new Route($name, $routePath, $handler);
-            $this->routes[$method] = $route;
-            $this->routesMap[$route->getName()] = $route;
-        }
+        $route = new Route($name, $path, $handler);
+        $this->routes[$method][] = $route;
+        $this->routesMap[$route->getName()] = $route;
+
+        // order the routes from littlest to biggest for matching
+        usort($this->routes[$method], function (Route $a, Route $b) {
+            return $b->getNormalPath()->getRegex() <=> $a->getNormalPath()->getRegex();
+        });
+
+        return $route;
     }
 
     /**
@@ -132,30 +94,40 @@ final class Router
     /**
      *
      * @param Request $request
-     * @return Match if a route is found or null else
+     * @return Match|null if a route is found or null else
      */
-    public function match(Request $request): Match
+    public function match(Request $request)
     {
-        if(! array_key_exists($request->getMethod(), $this->routes)){
+        if (!array_key_exists($request->getMethod(), $this->routes)) {
             throw new \InvalidArgumentException("[Router::match] method {$request->getMethod()} is not allowed");
         }
 
-        foreach ($this->routes[$request->getMethod()] as $route){
+        foreach ($this->routes[$request->getMethod()] as $route) {
 
-            $match = new Match($route);
-            $arguments = $route->getParameters();
-
-            if(preg_match(
-                $route->getRegex(),
-                $request->getUri()->getPath(),
-                $parameters
-            )){
-                $nb = 0;
-                foreach ($arguments as $argument){
-                    $match->addParameter($argument, $parameters[++$nb]);
-                }
-
+            $match = $route->match($request->getUri());
+            if ($match !== null) {
                 return $match;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param string $name
+     * @param array|null $parameters
+     * @return Uri|null
+     */
+    public function build(string $name, ?array $parameters = [])
+    {
+        foreach ($this->routesMap as $routeName => $route) {
+            if ($name === $routeName) {
+                // apply arguments to the route
+                // e.g '/test/{name: regex}' with '[name => 4]' becomes '/test/4'
+                $rebuiltPath = $route->buildPath($parameters);
+                if ($rebuiltPath !== null) {
+                    return $rebuiltPath;
+                }
             }
         }
 

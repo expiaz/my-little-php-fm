@@ -5,7 +5,6 @@ namespace Tests\Core\Dispatcher;
 use App\Core\Dispatcher\Entry;
 use App\Core\Dispatcher\FrontController;
 use PHPUnit\Framework\TestCase;
-use Prophecy\Exception\Doubler\ClassNotFoundException;
 
 class FrontControllerTest extends TestCase
 {
@@ -28,6 +27,7 @@ class FrontControllerTest extends TestCase
 
         $uri = 'http://monsite.com/controller/action/p1/p2';
         $extracted = $this->test->extractRessource($uri);
+        self::assertEquals("controller/action/p1/p2", $extracted);
         self::assertEquals("controller/action/p1/p2", $extracted);
 
         $uri = 'http://monsite.com/controller/action/p1/p2/';

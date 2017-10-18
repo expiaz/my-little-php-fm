@@ -108,4 +108,23 @@ class Uri
         return $this->fragment;
     }
 
+    public function getFullUrl(): string
+    {
+        $full = $this->scheme . '://';
+        $full .= $this->host;
+        if( (int) $this->port !== 80){
+            $full .= ':' . $this->port;
+        }
+        $full .= $this->path;
+        $full .= $this->query;
+        $full .= $this->fragment;
+
+        return $full;
+    }
+
+    public function __toString(): string
+    {
+        return $this->getFullUrl();
+    }
+
 }

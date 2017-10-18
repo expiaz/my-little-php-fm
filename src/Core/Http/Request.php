@@ -2,8 +2,6 @@
 
 namespace App\Core\Http;
 
-use Core\App\Http\ParameterBag;
-
 class Request
 {
 
@@ -31,6 +29,13 @@ class Request
         );
     }
 
+    /**
+     * Request constructor.
+     * @param string $method
+     * @param string $url
+     * @param array|null $query
+     * @param array|null $request
+     */
     public function __construct(string $method, string $url, ?array $query = [], ?array $request = [])
     {
         $this->uri = new Uri($url);

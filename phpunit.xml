@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<phpunit colors="true" bootstrap="./tests/index.php">
+<phpunit colors="true" bootstrap="./tests/index.php" verbose="true" stopOnFailure="true">
     <testsuite>
         <directory>
             ./tests
