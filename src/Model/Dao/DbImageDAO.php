@@ -14,7 +14,7 @@ class DbImageDAO extends AbstractDAO
      */
     private $pdo;
 
-    private $dbPath = SRC . 'Model' . DS . 'database' . DS . 'sqlite' . DS . 'images.db';
+    private $dbPath = ROOT . 'src' . DS . 'Model' . DS . 'database' . DS . 'sqlite' . DS . 'images.db';
 
     /**
      * register every picture found in

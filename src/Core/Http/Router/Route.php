@@ -19,6 +19,10 @@ final class Route
     )?
 \}
 REGEX;
+
+    private const VARIABLE_NAME_REGEX = '([a-zA-Z_][a-zA-Z0-9_-]*)';
+    private const VARIABLE_VALUE_REGEX = '([^{}]*(?:\{(?-1)\}[^{}]*)*)';
+
     public const DEFAULT_DISPATCH_REGEX = '[^/]+';
 
     /**
@@ -98,8 +102,7 @@ REGEX;
             return;
         }
 
-        $regex = $path;
-        $template = $path;
+        $stub = $path;
         $parameters = [];
 
         /*
@@ -120,20 +123,44 @@ REGEX;
          */
         foreach ($matches as $set) {
             // example done with '/test/{name: regex}/smth'
-            // '/test/'
-            $beforeMatch = substr($regex, 0, strpos($regex, $set[0][0]));
+            $fullMatch = $set[0][0];
+
             // 'regex'
-            $match = isset($set[2])
+            $filter = isset($set[2])
                 ? trim($set[2][0])
                 : self::DEFAULT_DISPATCH_REGEX;
-            // '/smth'
-            $afterMatch = substr($regex,strpos($regex, $set[0][0]) + strlen($set[0][0]));
-            // '/test/(regex)/smth'
-            $regex = $beforeMatch . '(' . $match . ')' . $afterMatch;
-            $template = $beforeMatch . '{{' . $set[1][0] . '}}' . $afterMatch;
             // 'name'
-            $parameters[$set[1][0]] = $match;
+            $parameterName = $set[1][0];
+
+            // '/test/'
+            $beforeMatch = substr($stub, 0, strpos($stub, $fullMatch));
+            // '/smth'
+            $afterMatch = substr($stub,strpos($stub, $fullMatch) + strlen($fullMatch));
+
+            // '/test/(regex)/smth'
+            $stub = $beforeMatch . '{{' . $parameterName . ':' . $filter . '}}' . $afterMatch;
+
+            // 'name'
+            $parameters[$parameterName] = $filter;
         }
+
+        // replace '{{name:filter}}' by '(filter)'
+        $regex = preg_replace_callback(
+            '~{{' . self::VARIABLE_NAME_REGEX . ':' . self::VARIABLE_VALUE_REGEX . '}}~',
+            function(array $matches): string{
+                return '(' . $matches[2] . ')';
+            },
+            $stub
+        );
+
+        // replace '{{name:filter}}' by '{{name}}'
+        $template = preg_replace_callback(
+            '~{{' . self::VARIABLE_NAME_REGEX . ':' . self::VARIABLE_VALUE_REGEX . '}}~',
+            function(array $matches): string{
+                return '{{' . $matches[1] . '}}';
+            },
+            $stub
+        );
 
         $this->template = $template;
         $this->regex = $this->regexify($regex);
@@ -160,7 +187,7 @@ REGEX;
 
         // replace every regex group by it's value provided in $parameters
         $rebuiltPath = preg_replace_callback(
-            '~\{\{([^(]+)\}\}~',
+            '~\{\{' . self::VARIABLE_NAME_REGEX . '\}\}~',
             function(array $matches) use ($parameters): string {
                 return $parameters[$matches[1]];
             },

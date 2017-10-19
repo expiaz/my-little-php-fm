@@ -2,6 +2,7 @@
 
 namespace App\Core\Http\Router;
 
+use App\Core\Http\ParameterBag;
 use App\Core\Http\Request;
 use App\Core\Http\Response;
 use App\Core\Http\Uri;
@@ -154,7 +155,7 @@ final class Router
      * @param Request $request
      * @return Match|null if a route is found or null otherwise
      */
-    public function match(Request $request)
+    public function match(Request $request): ?Match
     {
         if(! array_key_exists($request->getMethod(), $this->routes)){
             throw new InvalidArgumentException("[Router::match] method {$request->getMethod()} is not allowed");
@@ -170,14 +171,13 @@ final class Router
                 $request->getUri()->getPath(),
                 $parameters
             )){
-                $match = new Match($route);
+                $params = new ParameterBag();
                 $arguments = $route->getParameters();
                 $nb = 0;
                 foreach ($arguments as $argument => $filter){
-                    $match->addParameter($argument, $parameters[++$nb]);
+                    $params->set($argument, $parameters[++$nb]);
                 }
-
-                return $match;
+                return new Match($route, $params);
             }
 
         }
@@ -190,7 +190,7 @@ final class Router
      * @param array|null $parameters
      * @return Uri|null is no route found
      */
-    public function build(string $name, ?array $parameters = [])
+    public function build(string $name, ?array $parameters = []): ?Uri
     {
         foreach ($this->routes as $routes){
             /**

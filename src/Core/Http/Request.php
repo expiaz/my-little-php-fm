@@ -2,6 +2,8 @@
 
 namespace App\Core\Http;
 
+use App\Core\Http\Router\Match;
+
 class Request
 {
 
@@ -14,6 +16,7 @@ class Request
     private $method;
     private $query;
     private $request;
+    private $parameters;
 
     /**
      * create the request from the global variables $_SERVER, $_GET, $_POST
@@ -22,10 +25,21 @@ class Request
     public static function fromGlobals(): self
     {
         return new self(
-            $_SERVER['REQUEST_METHOD'] ?? '',
+            WEBMETHOD,
             WEBURL,
             $_GET,
             $_POST
+        );
+    }
+
+    public static function fromMatch(Match $match): self
+    {
+        return new self(
+            WEBMETHOD,
+            WEBURL,
+            $_GET,
+            $_POST,
+            $match->getParameters()->asArray()
         );
     }
 
@@ -35,15 +49,27 @@ class Request
      * @param string $url
      * @param array|null $query
      * @param array|null $request
+     * @param array|null $parameters
      */
-    public function __construct(string $method, string $url, ?array $query = [], ?array $request = [])
+    public function __construct(
+        string $method,
+        string $url,
+        ?array $query = [],
+        ?array $request = [],
+        ?array $parameters = []
+    )
     {
         $this->uri = new Uri($url);
         $this->method = $this->guessMethod($method);
         $this->query = new ParameterBag($query);
         $this->request = new ParameterBag($request);
+        $this->parameters = new ParameterBag($parameters);
     }
 
+    /**
+     * @param string $method
+     * @return string
+     */
     private function guessMethod(string $method): string
     {
         $method = strtoupper($method);
@@ -55,24 +81,44 @@ class Request
         return $method;
     }
 
+    /**
+     * @return Uri
+     */
     public function getUri(): Uri
     {
         return $this->uri;
     }
 
+    /**
+     * @return string
+     */
     public function getMethod(): string
     {
         return $this->method;
     }
 
+    /**
+     * @return ParameterBag
+     */
     public function getQuery(): ParameterBag
     {
         return $this->query;
     }
 
+    /**
+     * @return ParameterBag
+     */
     public function getParsedBody(): ParameterBag
     {
         return $this->request;
+    }
+
+    /**
+     * @return ParameterBag
+     */
+    public function getParameters(): ParameterBag
+    {
+        return $this->parameters;
     }
 
 }

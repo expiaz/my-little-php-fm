@@ -5,6 +5,7 @@ define('ROOT', dirname(__DIR__) . DS);
 define('PUBLIK', ROOT . 'public' . DS);
 define('SRC', ROOT . 'src' . DS);
 
+define('WEBMETHOD', strtoupper($_SERVER['REQUEST_METHOD']));
 define('WEBHOST', $_SERVER['HTTP_HOST']);
 define('WEBSCHEME',
     (
@@ -20,9 +21,23 @@ define('WEBURL', WEBROOT . $_SERVER['REQUEST_URI'] ?? '');
 
 require_once ROOT . "vendor/autoload.php";
 
-//now let's call our frontController that'll send us the text response
-$response = (new App\Core\Dispatcher\FrontController())->dispatch($_SERVER['REQUEST_URI'] ?? '');
+$container = new \App\Core\Container();
+$renderer = new \App\Core\Renderer(SRC . 'View');
+$router = new \App\Core\Http\Router\Router();
 
-echo $response;
+$renderer->addGlobal('renderer', $renderer);
+$renderer->addGlobal('router', $router);
+
+$container[\App\Core\Renderer::class] = $renderer;
+$container[\App\Core\Http\Router\Router::class] = $router;
+
+$app = new \App\Core\App($container, [
+    \App\Controller\IndexController::class
+]);
+$container[\App\Core\App::class] = $app;
+
+$response = $app->run(\App\Core\Http\Request::fromGlobals());
+
+$response->send(true);
 
 exit(0);

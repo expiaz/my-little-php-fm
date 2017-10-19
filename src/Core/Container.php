@@ -1,21 +1,44 @@
 <?php
 
-namespace App\Core\Http;
+namespace App\Core;
 
-use ArrayAccess;
-
-class ParameterBag implements ArrayAccess, \Countable
+class Container implements ArrayAccess
 {
-    protected $fields;
 
-    public function __construct(?array $fields = [])
+    private $resolved;
+
+    public function __construct()
     {
-        $this->fields = $fields;
+        $this->resolved = [];
     }
 
-    public function asArray(): array
+    /**
+     * @param callable $closure
+     * @return mixed
+     */
+    public function singleton(callable $closure)
     {
-        return $this->fields;
+        return call_user_func($closure, $this);
+    }
+
+    /**
+     * @param callable $factory
+     * @return callable
+     */
+    public function factory(callable $factory)
+    {
+        return $factory;
+    }
+
+    /**
+     * @param string $key
+     * @param mixed $value
+     */
+    public function set(string $key, $value): void
+    {
+        if(! $this->has($key)){
+            $this->resolved[$key] = $value;
+        }
     }
 
     /**
@@ -24,31 +47,28 @@ class ParameterBag implements ArrayAccess, \Countable
      */
     public function has(string $key): bool
     {
-        return array_key_exists($key, $this->fields);
-    }
-
-    /**
-     * @param string $key
-     * @param $value
-     */
-    public function set(string $key, $value): void
-    {
-        $this->fields[$key] = $value;
+        return isset($this->resolved[$key]);
     }
 
     /**
      * @param string $key
      * @param null $default
-     * @return null|mixed
+     * @return mixed
      */
     public function get(string $key, $default = null)
     {
         if(! $this->has($key)){
             return $default;
         }
-        return $this->fields[$key];
-    }
 
+        $value = $this->resolved[$key];
+
+        if(is_callable($value)){
+            return call_user_func($value, $this);
+        }
+
+        return $value;
+    }
 
     /**
      * Whether a offset exists
@@ -62,9 +82,9 @@ class ParameterBag implements ArrayAccess, \Countable
      * The return value will be casted to boolean if non-boolean was returned.
      * @since 5.0.0
      */
-    public function offsetExists($offset): bool
+    public function offsetExists($offset)
     {
-        return $this->has((string) $offset);
+        return $this->has($offset);
     }
 
     /**
@@ -78,7 +98,7 @@ class ParameterBag implements ArrayAccess, \Countable
      */
     public function offsetGet($offset)
     {
-        return $this->get((string) $offset);
+        return $this->get($offset);
     }
 
     /**
@@ -93,7 +113,7 @@ class ParameterBag implements ArrayAccess, \Countable
      * @return void
      * @since 5.0.0
      */
-    public function offsetSet($offset, $value): void
+    public function offsetSet($offset, $value)
     {
         $this->set($offset, $value);
     }
@@ -107,22 +127,10 @@ class ParameterBag implements ArrayAccess, \Countable
      * @return void
      * @since 5.0.0
      */
-    public function offsetUnset($offset): void
+    public function offsetUnset($offset)
     {
-
-    }
-
-    /**
-     * Count elements of an object
-     * @link http://php.net/manual/en/countable.count.php
-     * @return int The custom count as an integer.
-     * </p>
-     * <p>
-     * The return value is cast to an integer.
-     * @since 5.1.0
-     */
-    public function count(): int
-    {
-        return count($this->fields);
+        if($this->has($offset)){
+            unset($this->resolved[$offset]);
+        }
     }
 }

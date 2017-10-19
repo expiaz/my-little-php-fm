@@ -2,9 +2,9 @@
 
 namespace Tests\Core\Http\Router;
 
-use App\Controller\TestController;
 use App\Core\Http\Router\Route;
 use PHPUnit\Framework\TestCase;
+use Tests\Src\Controller\TestController;
 
 class RouteTest extends TestCase
 {
@@ -13,7 +13,7 @@ class RouteTest extends TestCase
         $route = new Route(
             'test.route',
             '/test/{var: \d+}',
-            TestController::class . '::route'
+            TestController::class . '::test'
         );
 
         self::assertContains('var', array_keys($route->getParameters()));

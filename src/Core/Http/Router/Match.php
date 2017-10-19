@@ -4,28 +4,24 @@ namespace App\Core\Http\Router;
 
 use App\Core\Http\ParameterBag;
 
-class Match extends ParameterBag
+class Match
 {
 
     private $route;
+    private $parameters;
 
-    public function __construct(Route $route)
+    public function __construct(Route $route, ParameterBag $parameterBag)
     {
-        parent::__construct();
         $this->route = $route;
-    }
-
-    public function addParameter(string $name, string $value)
-    {
-        $this->fields[$name] = $value;
+        $this->parameters = $parameterBag;
     }
 
     /**
-     * @return array
+     * @return ParameterBag
      */
-    public function getParameters(): array
+    public function getParameters(): ParameterBag
     {
-        return $this->fields;
+        return $this->parameters;
     }
 
     /**

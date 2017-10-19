@@ -2,21 +2,30 @@
 
 namespace App\Core;
 
+use App\Core\Http\Router\Router;
+
 abstract class BaseController
 {
+    /**
+     * @var Container
+     */
+    protected $container;
+    /**
+     * @var Renderer
+     */
     protected $renderer;
+    /**
+     * @var Router
+     */
+    protected $router;
 
-    public function __construct(Renderer $renderer)
+    public function __construct(Container $container)
     {
-        $this->renderer = $renderer;
+        $this->container = $container;
+        $this->renderer = $container->get(Renderer::class);
+        $this->router = $container->get(Router::class);
     }
 
-    protected function getParam(array $parameters, int $index = 0, $default = null){
-        return count($parameters) >= ($index + 1)
-            ? $parameters[$index]
-            : $default;
-    }
-
-    public abstract function indexAction(array $parameters): string;
-
+    // to enable the module
+    public abstract function __invoke(Container $container, Router $router, Renderer $renderer);
 }

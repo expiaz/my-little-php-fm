@@ -1,14 +1,13 @@
 <?php
 
-
-use App\Core\Http\Request;
-use App\Core\Http\Router\Router;
-
 define('DS', DIRECTORY_SEPARATOR);
 define('ROOT', dirname(__DIR__) . DS);
 define('PUBLIK', ROOT . 'public' . DS);
-define('SRC', ROOT . 'src' . DS);
 
+define('TEST', ROOT . 'tests' . DS);
+define('SRC', TEST . 'src' . DS);
+
+define('WEBMETHOD', 'GET');
 define('WEBHOST', 'test.com');
 define('WEBSCHEME', 'http');
 define('WEBROOT', WEBSCHEME . '://' . WEBHOST);

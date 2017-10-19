@@ -406,9 +406,10 @@ class Response
 
     /**
      * set the headers and return the response body to be sent
+     * @param bool|null $output should the request output itself on the stdout of php
      * @return string the text response
      */
-    public function send(): string
+    public function send(?bool $output = false): string
     {
         $http_line = sprintf('%s %s %s',
             $this->getProtocol(),
@@ -425,6 +426,10 @@ class Response
         $body = $this->getBody();
 
         header(self::CONTENT_LENGTH . ": " . strlen($body), true);
+
+        if($output){
+            echo $body;
+        }
 
         return $body;
     }
