@@ -2,18 +2,27 @@
 
 namespace App\Core\Http;
 
+use Exception;
 use InvalidArgumentException;
 use RuntimeException;
 
-
+/**
+ * respresents an http response
+ * Class Response
+ * @package App\Core\Http
+ */
 class Response
 {
-    private const EOL = "\r\n";
-
-    const CONTENT_LENGTH = 'Content-Length';
+    /**
+     * most used headers
+     */
     const CONTENT_TYPE = 'Content-Type';
     const LOCATION = 'Location';
 
+    /**
+     * @var array
+     * reasonPhrases of statusCode
+     */
     protected static $messages = [
         //Informational 1xx
         100 => 'Continue',
@@ -86,64 +95,58 @@ class Response
         599 => 'Network Connect Timeout Error',
     ];
 
+    /**
+     * @var string the http protocol used
+     */
     protected $protocol;
+
+    /**
+     * @var int the status code of the request
+     */
     protected $status;
+
+    /**
+     * @var string reasonPhrase associated to the status code
+     */
     protected $reasonPhrase;
+
+    /**
+     * @var array
+     * the current request headers
+     */
     protected $headers;
+
+    /**
+     * @var string
+     * the current request body
+     */
     protected $body;
 
-
-    public function __construct($status = 200, array $headers = [], string $body = '', $protocol = 'HTTP/1.1')
+    /**
+     * Response constructor.
+     * @param int $status
+     * @param array $headers
+     * @param string $body
+     * @param string $protocol
+     */
+    public function __construct(?int $status = 200, ?array $headers = [], ?string $body = '', ?string $protocol = 'HTTP/1.1')
     {
         $this->protocol = $protocol;
         $this->status = $this->filterStatus($status);
         $this->headers = array_merge(
             [
-                static::CONTENT_TYPE => 'text/html;charset=UTF-8'
+                self::CONTENT_TYPE => 'text/html;charset=UTF-8'
             ],
             $headers
         );
         $this->body = $body;
     }
 
-
-    public function getProtocol(): string
-    {
-        return $this->protocol;
-    }
-
-    public function getStatusCode(): int
-    {
-        return $this->status;
-    }
-
-    public function getStatusPhrase(): string
-    {
-        return $this->getReasonPhrase();
-    }
-
-    public function withStatus(int $code, ?string $reasonPhrase = ''): Response
-    {
-        $code = $this->filterStatus($code);
-
-        if (!is_string($reasonPhrase) && !method_exists($reasonPhrase, '__toString')) {
-            throw new InvalidArgumentException('ReasonPhrase must be a string');
-        }
-
-        $this->status = $code;
-        if ($reasonPhrase === '' && isset(static::$messages[$code])) {
-            $reasonPhrase = static::$messages[$code];
-        }
-
-        if ($reasonPhrase === '') {
-            throw new InvalidArgumentException('ReasonPhrase must be supplied for this code');
-        }
-
-        $this->reasonPhrase = $reasonPhrase;
-
-        return $this;
-    }
-
+    /**
+     * ensure that a status is valid
+     * @param int $status
+     * @return int $status
+     */
     protected function filterStatus(int $status): int
     {
         if ($status < 100 || $status > 599) {
@@ -153,6 +156,37 @@ class Response
         return $status;
     }
 
+    /*
+     * GETTERS
+     */
+
+    /**
+     * @return string
+     */
+    public function getProtocol(): string
+    {
+        return $this->protocol;
+    }
+
+    /**
+     * @return int
+     */
+    public function getStatusCode(): int
+    {
+        return $this->status;
+    }
+
+    /**
+     * @return string
+     */
+    public function getStatusPhrase(): string
+    {
+        return $this->getReasonPhrase();
+    }
+
+    /**
+     * @return string
+     */
     public function getReasonPhrase(): string
     {
         if (isset(static::$messages[$this->status])) {
@@ -161,53 +195,102 @@ class Response
         return '';
     }
 
+    /**
+     * @return array
+     */
+    public function getHeaders(): array
+    {
+        return $this->headers;
+    }
+
+    /**
+     * @param string $header
+     * @return string
+     * @throws Exception
+     */
+    public function getHeader(string $header): string
+    {
+        if ($this->hasHeader($header)) {
+            return $this->headers[$header];
+        }
+        throw new Exception("Response::getHeader no {$header}");
+    }
+
+    /**
+     * @return string
+     */
     public function getBody(): string
     {
         return $this->body;
     }
 
-    public function write(string $data): Response
-    {
-        return $this->append($data);
-    }
 
-    private function append(string $data): Response
+    /**
+     * change the status of the request, and it's associated reasonPhrase
+     * @param int $code
+     * @param null|string $reasonPhrase
+     * @return Response
+     */
+    public function withStatus(int $code, ?string $reasonPhrase = ''): Response
     {
-        $this->body .= $data;
-        $this->contentLength += strlen($data);
+        $code = $this->filterStatus($code);
+
+        $this->status = $code;
+        if ($reasonPhrase === '' && isset(static::$messages[$code])) {
+            $reasonPhrase = static::$messages[$code];
+        } else {
+            throw new InvalidArgumentException('ReasonPhrase must be supplied for this code : ' . $code);
+        }
+
+        $this->reasonPhrase = $reasonPhrase;
+
         return $this;
     }
 
+    /**
+     * does this request have this header registered
+     * @param $header
+     * @return bool
+     */
+    public function hasHeader($header): bool
+    {
+        return isset($this->headers[$header]);
+    }
 
+    /**
+     * add header to the request
+     * @param string $header
+     * @param string $value
+     * @return Response
+     */
     public function withHeader(string $header, string $value): Response
     {
         $this->headers[$header] = $value;
         return $this;
     }
 
-    public function hasHeader($header): bool
+    /**
+     * write string to the request's body
+     * @param string $data
+     * @return Response
+     */
+    public function write(string $data): Response
     {
-        return isset($this->headers[$header]);
+        $this->body .= $data;
+//        $this->contentLength += strlen($data);
+        return $this;
     }
-
-    public function getHeaders(): array
-    {
-        return $this->headers;
-    }
-
-    public function getHeader(string $header): string
-    {
-        if ($this->hasHeader($header)) {
-            return $this->headers[$header];
-        }
-        throw new \Exception("Response::getHeader no {$header}");
-    }
-
 
     /*
      * SPECIFIQUE HEADER SHORTCUTS
      */
 
+    /**
+     * add a location header to the request and 302 redirect code
+     * @param Uri $uri
+     * @param int|null $status
+     * @return Response
+     */
     public function withRedirect(Uri $uri, ?int $status = 302): Response
     {
         $this->withHeader(static::LOCATION, $uri->getFullUrl());
@@ -215,7 +298,13 @@ class Response
         return $this->withStatus($status);
     }
 
-
+    /**
+     * make request's body json encoded and change content type header
+     * @param $data
+     * @param int|null $status
+     * @param int|null $encodingOptions
+     * @return Response
+     */
     public function withJson($data, ?int $status = null, ?int $encodingOptions = 0): Response
     {
         $this->write($json = json_encode($data, $encodingOptions));
@@ -234,65 +323,86 @@ class Response
         return $responseWithJson;
     }
 
-
+    /**
+     * @return bool
+     */
     public function isEmpty(): bool
     {
         return in_array($this->getStatusCode(), [204, 205, 304]);
     }
 
-
+    /**
+     * @return bool
+     */
     public function isInformational(): bool
     {
         return $this->getStatusCode() >= 100 && $this->getStatusCode() < 200;
     }
 
-
+    /**
+     * @return bool
+     */
     public function isOk(): bool
     {
         return $this->getStatusCode() === 200;
     }
 
-
+    /**
+     * @return bool
+     */
     public function isSuccessful(): bool
     {
         return $this->getStatusCode() >= 200 && $this->getStatusCode() < 300;
     }
 
-
+    /**
+     * @return bool
+     */
     public function isRedirect(): bool
     {
         return in_array($this->getStatusCode(), [301, 302, 303, 307]);
     }
 
-
+    /**
+     * @return bool
+     */
     public function isRedirection(): bool
     {
         return $this->getStatusCode() >= 300 && $this->getStatusCode() < 400;
     }
 
-
+    /**
+     * @return bool
+     */
     public function isForbidden(): bool
     {
         return $this->getStatusCode() === 403;
     }
 
-
+    /**
+     * @return bool
+     */
     public function isNotFound(): bool
     {
         return $this->getStatusCode() === 404;
     }
 
-
+    /**
+     * @return bool
+     */
     public function isClientError()
     {
         return $this->getStatusCode() >= 400 && $this->getStatusCode() < 500;
     }
 
-
+    /**
+     * @return bool
+     */
     public function isServerError(): bool
     {
         return $this->getStatusCode() >= 500 && $this->getStatusCode() < 600;
     }
+
 
     /**
      * set the headers and return the response body to be sent
@@ -318,7 +428,6 @@ class Response
 
         return $body;
     }
-
 
     public function __toString(): string
     {
