@@ -54,12 +54,12 @@ REGEX;
     /**
      * @var array the parameters of the route (placeholders) and their filters
      */
-    private $parameters;
+    private $parameters = [];
 
     /**
      * @var Middleware[] the middlewares to call before this route's handler
      */
-    private $middlewares;
+    private $middlewares = [];
 
     /**
      * Route constructor.
@@ -72,7 +72,6 @@ REGEX;
         $this->name = $name;
         $this->path = $path;
         $this->handler = $handler;
-        $this->middlewares = [];
 
         $this->parsePath($path);
     }
@@ -99,6 +98,7 @@ REGEX;
             PREG_OFFSET_CAPTURE | PREG_SET_ORDER
         )) {
             $this->regex = $this->regexify($path);
+            $this->template = $path;
             return;
         }
 

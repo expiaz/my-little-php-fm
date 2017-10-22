@@ -2,7 +2,7 @@
 
 namespace App\Core\Http\Router;
 
-use App\Core\Http\ParameterBag;
+use App\Core\Utils\ParameterBag;
 
 class Match
 {

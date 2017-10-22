@@ -2,6 +2,8 @@
 
 namespace App\Core;
 
+use ArrayAccess;
+
 class Container implements ArrayAccess
 {
 

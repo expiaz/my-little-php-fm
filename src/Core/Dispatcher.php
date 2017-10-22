@@ -33,14 +33,12 @@ class Dispatcher
         $controller = substr($handler, 0, $pos);
         $action = substr($handler, $pos + 2);
 
-        if (!class_exists($controller)) {
+        if (! class_exists($controller)) {
             throw new ClassNotFoundException("$controller does not exists", $controller);
         }
 
-        $controllerInstance = new $controller($this->container);
-
         //let's now ensure that the method exists
-        if (!method_exists($controllerInstance, $action)) {
+        if (!method_exists($controller, $action)) {
             throw new MethodNotFoundException("$action does not exists in $controller", $action);
         }
 
@@ -49,16 +47,12 @@ class Dispatcher
 
     /**
      * resolve then dispatch the given request to the handler, send back the response from the handler
-     * @param string|callable $handler if string : Ns\Class::method
+     * @param string $handler Ns\Class::method
      * @param Request $request
      * @return Response
      */
-    public function dispatch($handler, Request $request): Response
+    public function dispatch(string $handler, Request $request): Response
     {
-        if (is_callable($handler)) {
-            return call_user_func($handler, $request);
-        }
-
         $pieces = $this->resolve($handler);
 
         if (count($pieces) === 0) {
@@ -68,6 +62,6 @@ class Dispatcher
         $controller = $pieces[0];
         $action = $pieces[1];
 
-        return $controller->$action($request);
+        return (new $controller($this->container))->$action($request);
     }
 }

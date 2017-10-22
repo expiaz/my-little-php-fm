@@ -425,7 +425,7 @@ class Response
 
         $body = $this->getBody();
 
-        header(self::CONTENT_LENGTH . ": " . strlen($body), true);
+        header("Content-Length: " . strlen($body), true);
 
         if($output){
             echo $body;

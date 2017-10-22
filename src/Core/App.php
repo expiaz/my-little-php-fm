@@ -17,14 +17,16 @@ class App
     public function __construct(Container $container, ?array $modules = [])
     {
         foreach ($modules as $module){
-            call_user_func_array(
-                (new $module($container)),
-                [
-                    $container,
-                    $container->get(Router::class),
-                    $container->get(Renderer::class)
-                ]
-            );
+            if(is_callable($module . '::register')){
+                call_user_func_array(
+                    $module . '::register',
+                    [
+                        $container,
+                        $container->get(Router::class),
+                        $container->get(Renderer::class)
+                    ]
+                );
+            }
         }
 
         $this->container = $container;
@@ -44,13 +46,10 @@ class App
         $match = $router->match($request);
 
         if($match === null){
-            return new Response(404, [], $this->container->get(Renderer::class)->render('/error/404.php'));
+            return new Response(404, [], $this->container->get(Renderer::class)->render('/error/404'));
         }
 
-        /**
-         * @var $dispatcher Dispatcher
-         */
-        $dispatcher = $this->container->get(Dispatcher::class);
+        $dispatcher = new Dispatcher($this->container);
 
         return $dispatcher->dispatch($match->getRoute()->getHandler(), Request::fromMatch($match));
     }

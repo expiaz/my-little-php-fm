@@ -4,6 +4,7 @@ define('DS', DIRECTORY_SEPARATOR);
 define('ROOT', dirname(__DIR__) . DS);
 define('PUBLIK', ROOT . 'public' . DS);
 define('SRC', ROOT . 'src' . DS);
+define('MODULE', SRC . 'Module' . DS);
 
 define('WEBMETHOD', strtoupper($_SERVER['REQUEST_METHOD']));
 define('WEBHOST', $_SERVER['HTTP_HOST']);
@@ -19,25 +20,26 @@ define('WEBSCHEME',
 define('WEBROOT', WEBSCHEME . '://' . WEBHOST);
 define('WEBURL', WEBROOT . $_SERVER['REQUEST_URI'] ?? '');
 
+define('DEBUG', true);
+
 require_once ROOT . "vendor/autoload.php";
 
-$container = new \App\Core\Container();
-$renderer = new \App\Core\Renderer(SRC . 'View');
-$router = new \App\Core\Http\Router\Router();
+function debug($var){
+    \App\Core\Utils\Debug::add($var);
+}
 
-$renderer->addGlobal('renderer', $renderer);
-$renderer->addGlobal('router', $router);
+$container = (new \App\Core\Bootstraper(
+    \App\Module\Site\Controller\SiteController::MODULE_PATH . 'config.php'
+    ))->bootstrap();
 
-$container[\App\Core\Renderer::class] = $renderer;
-$container[\App\Core\Http\Router\Router::class] = $router;
-
-$app = new \App\Core\App($container, [
-    \App\Controller\IndexController::class
-]);
-$container[\App\Core\App::class] = $app;
-
-$response = $app->run(\App\Core\Http\Request::fromGlobals());
+/**
+ * @var $response \App\Core\Http\Response
+ */
+$response = $container->get(\App\Core\App::class)->run(\App\Core\Http\Request::fromGlobals());
 
 $response->send(true);
+
+if(DEBUG)
+    \App\Core\Utils\Debug::print();
 
 exit(0);

@@ -3,6 +3,7 @@
 namespace App\Core\Http;
 
 use App\Core\Http\Router\Match;
+use App\Core\Utils\ParameterBag;
 
 class Request
 {

@@ -6,6 +6,7 @@ use App\Core\Http\Router\Router;
 
 abstract class BaseController
 {
+
     /**
      * @var Container
      */
@@ -26,6 +27,12 @@ abstract class BaseController
         $this->router = $container->get(Router::class);
     }
 
-    // to enable the module
-    public abstract function __invoke(Container $container, Router $router, Renderer $renderer);
+    /**
+     * enable route and views registering, called from a static context (no $this)
+     * @param Container $container
+     * @param Router $router
+     * @param Renderer $renderer
+     * @return void
+     */
+    public static abstract function register(Container $container, Router $router, Renderer $renderer): void;
 }
