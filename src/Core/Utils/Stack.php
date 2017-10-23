@@ -22,7 +22,7 @@ class Stack
      */
     public function empty(): bool
     {
-        return count($this->stack) > 0;
+        return $this->length() > 0;
     }
 
     /**

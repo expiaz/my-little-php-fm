@@ -63,6 +63,7 @@ class ImageController extends BaseController
 
         $images = $this->dao->getImageList($img, $nb);
         $columnSize = (int)($size / sqrt(count($images)));
+//        $columnSize = (int)($size / count($images));
 
         return new Response(200, [], $this->renderer->render('@image/grid', [
             'img' => $img,
