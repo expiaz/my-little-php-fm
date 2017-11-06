@@ -10,7 +10,7 @@ abstract class AbstractDAO {
     protected const absolutePath = PUBLIK . 'assets/img';
 
     // Chemin URL où se trouvent les images
-    protected const urlPath = WEBROOT . "/assets/img";
+    public const URL_PATH = WEBROOT . "/assets/img";
 
     /**
      * @param string $path

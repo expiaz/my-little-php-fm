@@ -10,7 +10,7 @@
  */
 
 /**
- * @var $img \App\Module\Image\Model\Entity\Image the current image
+ * @var $image \App\Module\Image\Model\Entity\Image the current image
  */
 /**
  * @var $size int the size of the image
@@ -23,11 +23,9 @@
 <?= $renderer->render('@layout/header') ?>
 
     <p>
-        <a href="<?= $router->build('image.jump', ['forward' => 0, 'id' => $img->getId(), 'size' => $size]) ?>">Prev</a>
-        <a href="<?= $router->build('image.jump', ['forward' => 1, 'id' => $img->getId(), 'size' => $size]) ?>">Next</a>
-        <a href="<?= $router->build('image.zoom', ['zoom' => 1, 'id' => $img->getId(), 'size' => $size]) ?>">
-            <img src="<?= $img->getURL(); ?>" width="<?= $size; ?>"/>
-        </a>
+        <a href="<?= $router->build('image.jump', ['forward' => 0, 'image' => $image->getId()]) ?>">Prev</a>
+        <a href="<?= $router->build('image.jump', ['forward' => 1, 'image' => $image->getId()]) ?>">Next</a>
+        <img src="<?= $image->getURL(); ?>"/>
     </p>
 
 <?= $renderer->render('@layout/footer') ?>

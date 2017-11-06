@@ -2,10 +2,12 @@
 
 namespace App\Module\Image\Model\Repository;
 
+use App\Core\Container;
+use App\Module\Category\Model\Entity\Category;
+use App\Module\Category\Model\Repository\CategoryDAO;
 use App\Module\Image\Controller\ImageController;
 use App\Module\Image\Model\Entity\Image;
 use PDO;
-use PDOException;
 
 class DbImageDAO extends AbstractDAO
 {
@@ -15,7 +17,12 @@ class DbImageDAO extends AbstractDAO
      */
     private $pdo;
 
-    private $dbPath = ImageController::MODULE_PATH . 'ressources/images.db';
+    public const DB_PATH = ImageController::MODULE_PATH . 'ressources/images.db';
+
+    /**
+     * @var CategoryDAO
+     */
+    private $categoryDao;
 
     /**
      * register every picture found in AbstractDAO::absolutePath
@@ -40,21 +47,10 @@ class DbImageDAO extends AbstractDAO
         $this->pdo->commit();
     }
 
-    public function __construct()
+    public function __construct(Container $container)
     {
-        try {
-            $this->pdo = new PDO(
-                "sqlite:$this->dbPath",
-                null,
-                null,
-                [
-                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ
-                ]
-            );
-        } catch (PDOException $e) {
-            throw $e;
-        }
+        $this->pdo = $container->get(PDO::class);
+        $this->categoryDao = $container->get(CategoryDAO::class);
     }
 
     /**
@@ -82,6 +78,16 @@ class DbImageDAO extends AbstractDAO
 
         $upplet = $query->fetch();
 
-        return new Image(static::urlPath . $upplet->name, $upplet->id);
+        $sql = "SELECT * FROM category WHERE id = :id";
+        $query = $this->pdo->prepare($sql);
+        $query->execute([
+            "id" => $upplet->category
+        ]);
+
+        return new Image(
+            static::URL_PATH . $upplet->name,
+            $upplet->id,
+            new Category($this->categoryDao, $upplet->id, $upplet->name)
+        );
     }
 }

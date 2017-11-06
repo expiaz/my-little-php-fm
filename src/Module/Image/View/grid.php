@@ -10,13 +10,13 @@
  */
 
 /**
- * @var $img \App\Module\Image\Model\Entity\Image the image from which the others are displayed (begining of the list)
+ * @var $image \App\Module\Image\Model\Entity\Image the image from which the others are displayed (begining of the list)
  */
 /**
  * @var $images \App\Module\Image\Model\Entity\Image[] the images to display
  */
 /**
- * @var $image \App\Module\Image\Model\Entity\Image
+ * @var $img \App\Module\Image\Model\Entity\Image the current iteration image
  */
 /**
  * @var $size int the size of the image
@@ -28,30 +28,25 @@
 
 <?= $renderer->render('@layout/header') ?>
 
-<p>
-    <a href="<?= $router->build('image.jump', [
-        'forward' => 0,
-        'id' => $img->getId(),
-        'size' => $size,
-        'nb' => $nb
-    ]) ?>">Prev</a>
-    <a href="<?= $router->build('image.jump', [
-        'forward' => 1,
-        'id' => $img->getId(),
-        'size' => $size,
-        'nb' => $nb
-    ]) ?>">Next</a>
-
-
-    <?php foreach ($images as $image): ?>
-        <a href="<?= $router->build('image.zoom', [
-            'zoom' => 1,
-            'id' => $image->getId(),
-            'size' => $size
+<a href="<?= $router->build('image.jump', [
+    'forward' => 0,
+    'image' => $image->getId(),
+    'nb' => $nb
+]) ?>">Prev</a>
+<a href="<?= $router->build('image.jump', [
+    'forward' => 1,
+    'image' => $image->getId(),
+    'nb' => $nb
+]) ?>">Next</a>
+<div class="container-grid">
+    <?php foreach ($images as $img): ?>
+        <a class="grid-item" href="<?= $router->build('image.show', [
+            'image' => $img->getId()
         ]) ?>">
-            <img src="<?= $image->getURL(); ?>" width="<?= $columnSize; ?>"/>
+            <img src="<?= $img->getURL(); ?>"/>
         </a>
     <?php endforeach; ?>
-</p>
+</div>
 
 <?= $renderer->render('@layout/footer') ?>
+<script src="<?=SCRIPTS?>script.js" type="text/javascript"></script>

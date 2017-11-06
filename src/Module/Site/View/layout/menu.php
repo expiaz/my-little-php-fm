@@ -10,10 +10,10 @@
  */
 
 /**
- * @var $img \App\Module\Image\Model\Entity\Image the current image
+ * @var $category \App\Module\Category\Model\Entity\Category the current category
  */
 /**
- * @var $size int the size of the image
+ * @var $img \App\Module\Image\Model\Entity\Image the current image
  */
 /**
  * @var $nb int the number of images to display
@@ -24,39 +24,72 @@
     <li><a href="<?= $router->build('site.home') ?>">Home</a></li>
     <li><a href="<?= $router->build('site.info') ?>">A propos</a></li>
 
-    <?php if($context->get('img') === null): ?>
+    <?php if($context->get('category')): ?> <!-- category -->
 
-        <li><a href="<?= $router->build('image.show') ?>">Voir Photos</a></li>
+        <?php if($context->get('nb') === null): ?> <!-- single -->
 
-    <?php else: ?>
+            <li><a href="<?= $router->build('category.image.first', [
+                    'category' => $category->getId()
+                ]) ?>">Première image de la catégorie</a></li>
+            <li><a href="<?= $router->build('category.image.random', [
+                    'category' => $category->getId()
+                ]) ?>">Image au hasard dans la catégorie</a></li>
+            <li><a href="<?= $router->build('category.image.grid', [
+                    'category' => $category->getId(),
+                    'image' => $img->getId()
+                ]) ?>">Plus d'images de la catégorie</a></li>
 
-        <li><a href="<?= $router->build('image.show') ?>">Première image</a></li>
-        <li><a href="<?= $router->build('image.random', $context->get('nb') ? [
-                'id' => $img->getId(),
-                'size' => $size,
-                'nb' => $nb
-            ] : [
-                'id' => $img->getId(),
-                'size' => $size
+        <?php else: ?> <!-- grid -->
+
+            <li><a href="<?= $router->build('image.first', [
+                    'category' => $category->getId(),
+                    'nb' => $nb
+                ]) ?>">Premières images de la catégorie</a></li>
+            <li><a href="<?= $router->build('image.random', [
+                    'category' => $category->getId(),
+                    'image' => $img->getId(),
+                    'nb' => $nb
+                ]) ?>">Images au hasard dans la catégorie</a></li>
+            <li><a href="<?= $router->build('image.grid', [
+                    'category' => $category->getId(),
+                    'image' => $img->getId(),
+                    'nb' => $nextNb
+                ]) ?>">Encore plus d'images de la catégorie</a></li>
+
+        <?php endif; ?>
+
+    <?php elseif($context->get('img') === null): ?> <!-- home -->
+
+        <!--<li><a href="<?/*= $router->build('image.show') */?>">Voir Photos</a></li>
+        <li><a href="<?/*= $router->build('category.list') */?>">Voir Catégories</a></li>-->
+
+    <?php elseif($context->get('nb') === null): ?> <!-- image grid -->
+
+        <li><a href="<?= $router->build('image.first') ?>">Première image</a></li>
+        <li><a href="<?= $router->build('image.random', [
+                'id' => $img->getId()
             ]) ?>">Image au hasard</a></li>
-        <li><a href="<?= $router->build('image.grid', $context->get('nextNb') ? [
-                'id' => $img->getId(),
-                'size' => $size,
-                'nb' => $nextNb
-            ] : [
-                'id' => $img->getId(),
-                'size' => $size
+        <li><a href="<?= $router->build('image.grid', [
+                'id' => $img->getId()
             ]) ?>">Plus d'images</a></li>
-        <li><a href="<?= $router->build('image.zoom', [
-                'zoom' => 1,
+
+    <?php else: ?> <!-- image -->
+
+        <li><a href="<?= $router->build('image.first', [
+                'nb' => $nb
+            ]) ?>">Premières images</a></li>
+        <li><a href="<?= $router->build('image.random', [
                 'id' => $img->getId(),
-                'size' => $size
-            ]) ?>">Augmenter le zoom</a></li>
-        <li><a href="<?= $router->build('image.zoom', [
-                'zoom' => 0,
+                'nb' => $nb
+            ]) ?>">Images au hasard</a></li>
+        <li><a href="<?= $router->build('image.grid', [
                 'id' => $img->getId(),
-                'size' => $size
-            ]) ?>">Diminuer le zoom</a></li>
+                'nb' => $nextNb
+            ]) ?>">Plus d'images</a></li>
 
     <?php endif; ?>
+
+    <li><a href="<?= $router->build('image.show') ?>">Voir Photos</a></li>
+    <li><a href="<?= $router->build('category.list') ?>">Voir Catégories</a></li>
+
 </ul>

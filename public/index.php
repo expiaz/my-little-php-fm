@@ -19,6 +19,8 @@ define('WEBSCHEME',
 );
 define('WEBROOT', WEBSCHEME . '://' . WEBHOST);
 define('WEBURL', WEBROOT . $_SERVER['REQUEST_URI'] ?? '');
+define('STYLES', WEBROOT . '/assets/style/');
+define('SCRIPTS', WEBROOT . '/assets/script/');
 
 define('DEBUG', true);
 

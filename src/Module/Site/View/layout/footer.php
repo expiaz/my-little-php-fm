@@ -11,7 +11,8 @@
 ?>
 
 </div> <!-- END BODY -->
-
+<script src="<?=SCRIPTS?>jquery.min.js" type="text/javascript"></script>
+<script src="<?=SCRIPTS?>isotope.min.js" type="text/javascript"></script>
 <div id="pied_de_page">
 </div>
 </body>

@@ -4,6 +4,8 @@ namespace App\Core;
 
 use App\Core\Utils\ParameterBag;
 use App\Core\Http\Router\Router;
+use App\Module\Image\Model\Repository\DbImageDAO;
+use PDO;
 
 class Bootstraper
 {
@@ -35,6 +37,15 @@ class Bootstraper
 
         $container[Renderer::class] = $renderer;
         $container[Router::class] = $router;
+        $container[PDO::class] = new PDO(
+            "sqlite:" . DbImageDAO::DB_PATH,
+            null,
+            null,
+            [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ
+            ]
+        );
 
         $container['config'] = $this->config;
 

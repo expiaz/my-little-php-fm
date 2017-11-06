@@ -24,7 +24,7 @@ class Dispatcher
      * @throws ClassNotFoundException
      * @throws MethodNotFoundException
      */
-    private function resolve(string $handler): array
+    public function resolve(string $handler): array
     {
         if (($pos = strpos($handler, '::')) === false) {
             throw new InvalidArgumentException("[Dispatcher::resolve] $handler is not a valid handler");

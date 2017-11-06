@@ -15,7 +15,7 @@
 <head>
     <title>Site SIL3</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <link rel="stylesheet" type="text/css" href="<?=WEBROOT?>/assets/style/style.css" media="screen" title="Normal"/>
+    <link rel="stylesheet" type="text/css" href="<?=STYLES?>style.css" media="screen" title="Normal"/>
 </head>
 <body>
 <div id="entete">

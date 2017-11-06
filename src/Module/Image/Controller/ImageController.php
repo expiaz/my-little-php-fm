@@ -25,13 +25,15 @@ class ImageController extends BaseController
      */
     public static function register(Container $container, Router $router, Renderer $renderer): void
     {
+        $container->set(DbImageDAO::class, new DbImageDAO($container));
+
         $renderer->addNamespace('image', self::MODULE_PATH . 'View');
 
-        $router->get('/image[/{id:\d+}[/{size: \d+}]]', ImageController::class . '::showAction', 'image.show');
-        $router->get('/image/grid/{id: \d+}/{size: \d+}[/{nb: \d+}]', ImageController::class . '::gridAction', 'image.grid');
-        $router->get('/image/jump/{forward: \d{1}}/{id:\d+}[/{size: \d+}[/{nb: \d+}]]', ImageController::class . '::jumpAction', 'image.jump');
-        $router->get('/image/zoom/{zoom: \d{1}}/{id: \d+}/{size: \d+}', ImageController::class . '::zoomAction', 'image.zoom');
-        $router->get('/image/random/[{id: \d+}[/{size: \d+}[/{nb: \d+}]]]', ImageController::class . '::randomAction', 'image.random');
+        $router->get('/image/first[/{nb: \d+}]', ImageController::class . '::firstAction', 'image.first');
+        $router->get('/image[/{image: \d+}]', ImageController::class . '::showAction', 'image.show');
+        $router->get('/image/grid[/{image: \d+}[/{nb: \d+}]]', ImageController::class . '::gridAction', 'image.grid');
+        $router->get('/image/jump/{forward: \d{1}}/{image: \d+}[/{nb: \d+}]', ImageController::class . '::jumpAction', 'image.jump');
+        $router->get('/image/random/[{image: \d+}[/{nb: \d+}]]', ImageController::class . '::randomAction', 'image.random');
     }
 
     private $dao;
@@ -39,110 +41,89 @@ class ImageController extends BaseController
     public function __construct(Container $container)
     {
         parent::__construct($container);
-        $this->dao = new DbImageDAO();
+        $this->dao = $container->get(DbImageDAO::class);
     }
 
-    public function showAction(Request $request): Response
+    public function firstAction(Request $request): Response
     {
-        $img = $this->dao->getImage(
-            $request->getParameters()->get('id', $this->dao->getFirstImage()->getId())
-        );
-        $size = $request->getParameters()->get('size', 480);
+        $nb = $request->getParameters()->get('nb');
 
-        return new Response(200, [], $this->renderer->render('@image/show', [
-            'img' => $img,
-            'size' => $size
-        ]));
-    }
+        // grid mode
+        if($nb !== null){
+            return (new Response())->withRedirect($this->router->build('image.grid', [
+                'nb' => $nb,
+                'image' => $this->dao->getFirstImage()->getId()
+            ]));
+        }
 
-    public function gridAction(Request $request): Response
-    {
-        $img = $this->dao->getImage($request->getParameters()->get('id'));
-        $size = (int)$request->getParameters()->get('size', 480);
-        $nb = (int)$request->getParameters()->get('nb', 2);
-
-        $images = $this->dao->getImageList($img, $nb);
-        $columnSize = (int)($size / sqrt(count($images)));
-//        $columnSize = (int)($size / count($images));
-
-        return new Response(200, [], $this->renderer->render('@image/grid', [
-            'img' => $img,
-            'images' => $images,
-            'columnSize' => $columnSize,
-            'size' => $size,
-            'nb' => $nb,
-            'nextNb' => $nb * 2
+        // single mode
+        return (new Response())->withRedirect($this->router->build('image.show', [
+            'image' => $this->dao->getFirstImage()->getId()
         ]));
     }
 
     public function jumpAction(Request $request): Response
     {
         $forward = (int)$request->getParameters()->get('forward');
-        $img = $this->dao->getImage($request->getParameters()->get('id'));
-        $size = (int)$request->getParameters()->get('size', 480);
+        $image = $this->dao->getImage($request->getParameters()->get('image'));
         $nb = $request->getParameters()->get('nb');
 
         // jump to grid
         if ($nb !== null) {
             return (new Response())->withRedirect($this->router->build('image.grid', [
-                'id' => $this->dao->jumpToImage($img, $forward ? $nb : -$nb)->getId(),
-                'size' => $size,
+                'image' => $this->dao->jumpToImage($image, $forward ? $nb : -$nb)->getId(),
                 'nb' => $nb
             ]));
         }
 
         // jump to single
         return (new Response())->withRedirect($this->router->build('image.show', [
-            'id' => ($forward ? $this->dao->getNextImage($img) : $this->dao->getPrevImage($img))->getId(),
-            'size' => $size
-        ]));
-    }
-
-    public function zoomAction(Request $request): Response
-    {
-        $zoom = (int)$request->getParameters()->get('zoom', 0);
-        $img = $this->dao->getImage($request->getParameters()->get('id'));
-        $size = (int)$request->getParameters()->get('size', 480);
-
-        $size = (int)($size * ($zoom ? 1.25 : 0.75));
-
-        if ($size < 2) {
-            $size = 2;
-        }
-
-        return (new Response())->withRedirect($this->router->build('image.show', [
-            'id' => $img->getId(),
-            'size' => $size
+            'image' => ($forward ? $this->dao->getNextImage($image) : $this->dao->getPrevImage($image))->getId(),
         ]));
     }
 
     public function randomAction(Request $request): Response
     {
-        $id = $request->getParameters()->get('id');
-        $img = $this->dao->getRandomImage();
-        $size = (int)$request->getParameters()->get('size', 480);
+        $image = $this->dao->getRandomImage();
         $nb = $request->getParameters()->get('nb');
-
-        if ($id !== null) {
-            $actual = $this->dao->getImage($id);
-
-            while ($actual->getId() === $img->getId()) {
-                $img = $this->dao->getRandomImage();
-            }
-        }
 
         // jump to grid
         if ($nb !== null) {
             return (new Response())->withRedirect($this->router->build('image.grid', [
-                'id' => $this->dao->jumpToImage($img, $nb)->getId(),
-                'size' => $size,
+                'image' => $this->dao->jumpToImage($image, $nb)->getId(),
                 'nb' => $nb
             ]));
         }
 
         return (new Response())->withRedirect($this->router->build('image.show', [
-            'id' => $img->getId(),
-            'size' => $size
+            'image' => $image->getId()
+        ]));
+    }
+
+
+    public function gridAction(Request $request): Response
+    {
+        $image = $this->dao->getImage($request->getParameters()->get('image', $this->dao->getFirstImage()->getId()));
+        $nb = (int)$request->getParameters()->get('nb', 2);
+
+        $images = $this->dao->getImageList($image, $nb);
+
+        return new Response(200, [], $this->renderer->render('@image/grid', [
+            'image' => $image,
+            'images' => $images,
+            'nb' => $nb,
+            'nextNb' => $nb * 2
+        ]));
+    }
+
+    public function showAction(Request $request): Response
+    {
+        $image = $this->dao->getImage(
+            $request->getParameters()->get('image', $this->dao->getFirstImage()->getId())
+        );
+
+        return new Response(200, [], $this->renderer->render('@image/show', [
+            'image' => $image
         ]));
     }
 

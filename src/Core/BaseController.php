@@ -3,6 +3,7 @@
 namespace App\Core;
 
 use App\Core\Http\Router\Router;
+use PDO;
 
 abstract class BaseController
 {
@@ -19,6 +20,7 @@ abstract class BaseController
      * @var Router
      */
     protected $router;
+
 
     public function __construct(Container $container)
     {
