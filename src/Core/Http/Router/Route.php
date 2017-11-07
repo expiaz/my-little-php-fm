@@ -3,6 +3,7 @@
 namespace App\Core\Http\Router;
 
 use App\Core\Http\Uri;
+use App\Core\Utils\Stack;
 
 /**
  * Represents a path with or without arguments
@@ -57,9 +58,9 @@ REGEX;
     private $parameters = [];
 
     /**
-     * @var Middleware[] the middlewares to call before this route's handler
+     * @var Stack<string> the middlewares to call before this route's handler
      */
-    private $middlewares = [];
+    private $middlewares;
 
     /**
      * Route constructor.
@@ -72,6 +73,7 @@ REGEX;
         $this->name = $name;
         $this->path = $path;
         $this->handler = $handler;
+        $this->middlewares = new Stack();
 
         $this->parsePath($path);
     }
@@ -171,6 +173,7 @@ REGEX;
      * replace the placeholders of a route with the given values
      * @param array|null $parameters
      * @return Uri|null if $parameters aren't correct
+     * @throws \Exception
      */
     public function buildUri(?array $parameters = [])
     {
@@ -211,12 +214,12 @@ REGEX;
 
     /**
      * add a middleware to the queue
-     * @param Middleware $middleware
+     * @param string $middleware
      * @return Route
      */
-    public function use(Middleware $middleware): Route
+    public function use(string $middleware): Route
     {
-        $this->middlewares[] = $middleware;
+        $this->middlewares->push($middleware);
         return $this;
     }
 
@@ -261,5 +264,11 @@ REGEX;
         return $this->parameters;
     }
 
-
+    /**
+     * @return Stack<string>
+     */
+    public function getMiddlewares(): Stack
+    {
+        return $this->middlewares;
+    }
 }

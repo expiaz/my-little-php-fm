@@ -99,6 +99,7 @@ class Request
     }
 
     /**
+     * equivalent of $_GET
      * @return ParameterBag
      */
     public function getQuery(): ParameterBag
@@ -107,6 +108,7 @@ class Request
     }
 
     /**
+     * equivalent of $_POST
      * @return ParameterBag
      */
     public function getParsedBody(): ParameterBag

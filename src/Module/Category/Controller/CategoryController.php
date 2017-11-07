@@ -25,16 +25,15 @@ class CategoryController extends BaseController
      */
     public static function register(Container $container, Router $router, Renderer $renderer): void
     {
-        $container->set(CategoryDAO::class, new CategoryDAO($container));
-
         $renderer->addNamespace('category', self::MODULE_PATH . 'View');
         // ACTIONS
         $router->get('/category', CategoryController::class . '::listAction', 'category.list');
-        $router->get('/category/{category: \d+}[/{image: \d+}]', CategoryController::class . '::showAction', 'category.show');
+        $router->get('/category/{category: \d+}', CategoryController::class . '::showAction', 'category.show');
+        $router->get('/category/search', CategoryController::class . '::searchAction', 'category.search');
         // IMAGES
         $router->get('/category/{category: \d+}/image/first[/{nb: \d+}]', CategoryController::class . '::firstImageAction', 'category.image.first');
         $router->get('/category/{category: \d+}/image/random[/{nb: \d+}]', CategoryController::class . '::randomImageAction', 'category.image.random');
-        $router->get('/category/{category: \d+}/image/{image: \d+}/jump/{forward: \d{1}}[/{nb: \d+}]', CategoryController::class . '::jumpImageAction', 'category.image.random');
+        $router->get('/category/{category: \d+}/image/{image: \d+}/jump/{forward: \d{1}}[/{nb: \d+}]', CategoryController::class . '::jumpImageAction', 'category.image.jump');
         $router->get('/category/{category: \d+}/image/{image: \d+}', CategoryController::class . '::showImageAction', 'category.image.show');
         $router->get('/category/{category: \d+}/image/{image: \d+}/grid[/{nb: \d+}]', CategoryController::class . '::showImageGridAction', 'category.image.grid');
         // CRUD
@@ -43,7 +42,13 @@ class CategoryController extends BaseController
         $router->post('/category/delete/{id: \d+}', CategoryController::class . '::deleteAction', 'category.delete');
     }
 
+    /**
+     * @var CategoryDAO
+     */
     private $dao;
+    /**
+     * @var DbImageDAO
+     */
     private $imageDao;
 
     public function __construct(Container $container)
@@ -51,6 +56,22 @@ class CategoryController extends BaseController
         parent::__construct($container);
         $this->dao = $container->get(CategoryDAO::class);
         $this->imageDao = $container->get(DbImageDAO::class);
+    }
+
+    public function searchAction(Request $request): Response
+    {
+        $search = $request->getQuery()->get('q');
+
+        if($search === null){
+            return (new Response())->withStatus(404)->write($this->renderer->render('@site/error/404'));
+        }
+
+        $founds = $this->dao->searchCategories($search);
+
+        return new Response(200, [], $this->renderer->render('@category/search', [
+            'results' => $founds,
+            'search' => $search
+        ]));
     }
 
     public function listAction(Request $request): Response
@@ -64,7 +85,6 @@ class CategoryController extends BaseController
 
     public function showAction(Request $request): Response
     {
-        $imgId = $request->getParameters()->get('image');
         $category = $this->dao->getCategory((int)$request->getParameters()->get('category'));
 
         if ($category->getImages()->isEmpty()) {
@@ -72,18 +92,10 @@ class CategoryController extends BaseController
         }
 
         // show every images of the category
-        if ($imgId === null) {
-            return (new Response())->withRedirect($this->router->build('category.image.grid', [
-                'category' => $category->getId(),
-                'image' => $category->getImages()->first(),
-                'nb' => $category->getImages()->length()
-            ]));
-        }
-
-        // show the current image
-        return (new Response())->withRedirect($this->router->build('category.image.single', [
+        return (new Response())->withRedirect($this->router->build('category.image.grid', [
             'category' => $category->getId(),
-            'image' => $this->imageDao->getImage($imgId)->getId()
+            'image' => $category->getImages()->first()->getId(),
+            'nb' => $category->getImages()->length()
         ]));
     }
 
@@ -96,14 +108,14 @@ class CategoryController extends BaseController
         if ($nb !== null) {
             return (new Response())->withRedirect($this->router->build('category.image.grid', [
                 'category' => $category->getId(),
-                'image' => $category->getImages()->first(),
+                'image' => $category->getImages()->first()->getId(),
                 'nb' => $nb
             ]));
         }
 
         return (new Response())->withRedirect($this->router->build('category.image.show', [
             'category' => $category->getId(),
-            'image' => $category->getImages()->first()
+            'image' => $category->getImages()->first()->getId()
         ]));
     }
 
@@ -125,7 +137,8 @@ class CategoryController extends BaseController
 
         // jump to single
         return (new Response())->withRedirect($this->router->build('category.image.show', [
-            'id' => ($forward
+            'category' => $category->getId(),
+            'image' => ($forward
                 ? $category->jumpToImage($img, 1)
                 : $category->jumpToImage($img, -1)
             )->getId(),
@@ -140,7 +153,7 @@ class CategoryController extends BaseController
         // jump to grid
         if ($nb !== null) {
             return (new Response())->withRedirect($this->router->build('category.image.grid', [
-                'category' => $category,
+                'category' => $category->getId(),
                 'image' => $category->getRandomImage()->getId(),
                 'nb' => $nb
             ]));
@@ -148,7 +161,7 @@ class CategoryController extends BaseController
 
         // jump to single
         return (new Response())->withRedirect($this->router->build('category.image.show', [
-            'category' => $category,
+            'category' => $category->getId(),
             'image' => $category->getRandomImage()->getId(),
         ]));
     }
@@ -158,13 +171,13 @@ class CategoryController extends BaseController
     {
         // show the image for the current category
         $category = $this->dao->getCategory($request->getParameters()->get('category'));
-        $img = $this->imageDao->getImage(
+        $image = $this->imageDao->getImage(
             $request->getParameters()->get('image', $this->imageDao->getFirstImage()->getId())
         );
 
         return new Response(200, [], $this->renderer->render('@category/image/show', [
             'category' => $category,
-            'image' => $img
+            'image' => $image
         ]));
     }
 
@@ -172,14 +185,15 @@ class CategoryController extends BaseController
     {
         // show $nb images of the category
         $category = $this->dao->getCategory($request->getParameters()->get('category'));
-        $img = $this->imageDao->getImage(
+        $image = $this->imageDao->getImage(
             $request->getParameters()->get('image', $this->imageDao->getFirstImage()->getId())
         );
         $nb = (int)$request->getParameters()->get('nb', 2);
 
-        return new Response(200, [], $this->renderer->render('@category/image/show', [
+        return new Response(200, [], $this->renderer->render('@category/image/grid', [
             'category' => $category,
-            'images' => $category->getImagesList($img, $nb),
+            'image' => $image,
+            'images' => $category->getImagesList($image, $nb),
             'nb' => $nb,
             'nextNb' => $nb * 2
         ]));

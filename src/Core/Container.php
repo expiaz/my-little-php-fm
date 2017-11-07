@@ -2,16 +2,28 @@
 
 namespace App\Core;
 
+use App\Core\Utils\Resolver;
 use ArrayAccess;
+use Exception;
 
 class Container implements ArrayAccess
 {
 
+    /**
+     * @var array
+     */
     private $resolved;
+    /**
+     * @var Resolver
+     */
+    private $resolver;
 
     public function __construct()
     {
         $this->resolved = [];
+        // set the container for DI
+        $this->set(Container::class, $this);
+        $this->resolver = new Resolver($this);
     }
 
     /**
@@ -56,15 +68,28 @@ class Container implements ArrayAccess
      * @param string $key
      * @param null $default
      * @return mixed
+     * @throws Exception
      */
     public function get(string $key, $default = null)
     {
+        // no key exists
         if(! $this->has($key)){
+            // if it's a class
+            if(class_exists($key)){
+                try{
+                    // try to resolve it
+                    return $this->resolver->resolve($key);
+                } catch (Exception $e){
+                    // fail so return the default value provided
+                    return $default;
+                }
+            }
             return $default;
         }
 
         $value = $this->resolved[$key];
 
+        // is a closure
         if(is_callable($value)){
             return call_user_func($value, $this);
         }

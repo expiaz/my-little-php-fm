@@ -23,6 +23,7 @@ define('STYLES', WEBROOT . '/assets/style/');
 define('SCRIPTS', WEBROOT . '/assets/script/');
 
 define('DEBUG', true);
+define('CONFIG_FILE', \App\Module\Site\Controller\SiteController::MODULE_PATH . 'config.php');
 
 require_once ROOT . "vendor/autoload.php";
 
@@ -30,9 +31,7 @@ function debug($var){
     \App\Core\Utils\Debug::add($var);
 }
 
-$container = (new \App\Core\Bootstraper(
-    \App\Module\Site\Controller\SiteController::MODULE_PATH . 'config.php'
-    ))->bootstrap();
+$container = (new \App\Core\Bootstraper(CONFIG_FILE))->bootstrap();
 
 /**
  * @var $response \App\Core\Http\Response

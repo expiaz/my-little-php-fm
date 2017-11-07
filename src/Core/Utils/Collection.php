@@ -25,22 +25,23 @@ class Collection implements \ArrayAccess
      */
     public function isEmpty(): bool
     {
-        return $this->length() > 0;
+        return $this->length() === 0;
     }
 
     /**
      * @param $element
      * @return int
      */
-    public function indexOf($element): ?int
+    public function indexOf($element): int
     {
-        return array_search($element);
+        $index = array_search($element, $this->array);
+        return $index === false ? -1 : $index;
     }
 
     /**
      * @return mixed
      */
-    public function first(): mixed
+    public function first()
     {
         return $this->isEmpty() ? null : $this->array[0];
     }
@@ -48,7 +49,7 @@ class Collection implements \ArrayAccess
     /**
      * @return mixed
      */
-    public function last(): mixed
+    public function last()
     {
         return $this->isEmpty() ? null : end($this->array);
     }
@@ -57,7 +58,7 @@ class Collection implements \ArrayAccess
      * @param int $index
      * @return mixed
      */
-    public function has(int $index): mixed
+    public function has(int $index)
     {
         return isset($this->array[$index]);
     }
@@ -66,7 +67,7 @@ class Collection implements \ArrayAccess
      * @param int $index
      * @return mixed
      */
-    public function get(int $index): mixed
+    public function get(int $index)
     {
         return $this->has($index) ? $this->array[$index] : null;
     }
@@ -134,7 +135,7 @@ class Collection implements \ArrayAccess
      */
     public function offsetSet($offset, $value)
     {
-        return $this->set($offset, $value);
+        $this->set($offset, $value);
     }
 
     /**

@@ -22,7 +22,13 @@ class Image
      */
     private $id;
 
-    public function __construct(string $url, int $id, Category $category)
+    /**
+     * Image constructor.
+     * @param string $url
+     * @param int $id
+     * @param Category|null $category
+     */
+    public function __construct(string $url, int $id, ?Category $category)
     {
         $this->url = $url;
         $this->id = $id;
@@ -46,9 +52,9 @@ class Image
     }
 
     /**
-     * @return Category
+     * @return Category|null
      */
-    public function getCategory(): Category
+    public function getCategory(): ?Category
     {
         return $this->category;
     }

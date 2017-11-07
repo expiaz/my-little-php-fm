@@ -13,7 +13,7 @@
  * @var $category \App\Module\Category\Model\Entity\Category the current category
  */
 /**
- * @var $img \App\Module\Image\Model\Entity\Image the image from which the others are displayed (begining of the list)
+ * @var $image \App\Module\Image\Model\Entity\Image the image from which the others are displayed (begining of the list)
  */
 /**
  * @var $images \App\Module\Image\Model\Entity\Image[] the images to display
@@ -26,7 +26,7 @@
  */
 
 /**
- * @var $image \App\Module\Image\Model\Entity\Image the current iteration image
+ * @var $img \App\Module\Image\Model\Entity\Image the current iteration image
  */
 ?>
 
@@ -35,22 +35,22 @@
 <a href="<?= $router->build('category.image.jump', [
     'category' => $category->getId(),
     'forward' => 0,
-    'image' => $img->getId(),
+    'image' => $image->getId(),
     'nb' => $nb
 ]) ?>">Prev</a>
 <a href="<?= $router->build('category.image.jump', [
     'category' => $category->getId(),
     'forward' => 1,
-    'image' => $img->getId(),
+    'image' => $image->getId(),
     'nb' => $nb
 ]) ?>">Next</a>
 <div class="container-grid">
-    <?php foreach ($images as $image): ?>
+    <?php foreach ($images as $img): ?>
         <a class="grid-item" href="<?= $router->build('category.image.show', [
             'category' => $category->getId(),
-            'image' => $image->getId()
+            'image' => $img->getId()
         ]) ?>">
-            <img src="<?= $image->getURL(); ?>"/>
+            <img src="<?= $img->getURL(); ?>"/>
         </a>
     <?php endforeach; ?>
 </div>

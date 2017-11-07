@@ -25,15 +25,13 @@ class ImageController extends BaseController
      */
     public static function register(Container $container, Router $router, Renderer $renderer): void
     {
-        $container->set(DbImageDAO::class, new DbImageDAO($container));
-
         $renderer->addNamespace('image', self::MODULE_PATH . 'View');
 
         $router->get('/image/first[/{nb: \d+}]', ImageController::class . '::firstAction', 'image.first');
         $router->get('/image[/{image: \d+}]', ImageController::class . '::showAction', 'image.show');
         $router->get('/image/grid[/{image: \d+}[/{nb: \d+}]]', ImageController::class . '::gridAction', 'image.grid');
         $router->get('/image/jump/{forward: \d{1}}/{image: \d+}[/{nb: \d+}]', ImageController::class . '::jumpAction', 'image.jump');
-        $router->get('/image/random/[{image: \d+}[/{nb: \d+}]]', ImageController::class . '::randomAction', 'image.random');
+        $router->get('/image/random[/{nb: \d+}]', ImageController::class . '::randomAction', 'image.random');
     }
 
     private $dao;

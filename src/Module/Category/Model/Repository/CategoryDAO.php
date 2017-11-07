@@ -80,6 +80,26 @@ class CategoryDAO
         return $images;
     }
 
+    /**
+     * @param string $name
+     * @return array
+     * @internal param string $search
+     */
+    public function searchCategories(string $name): array
+    {
+        $sql = "SELECT * FROM category WHERE name LIKE ?";
+        $query = $this->pdo->prepare($sql);
+        $query->execute([
+            "%$name%"
+        ]);
 
+        $results = $query->fetchAll();
+        $categories = [];
+        foreach ($results as $result){
+            $categories[] = new Category($this, $result->id, $result->name);
+        }
+
+        return $categories;
+    }
 
 }

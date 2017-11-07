@@ -63,10 +63,22 @@ class Category
      * @param Image $from
      * @param int $nb
      * @return array
+     * @throws \Exception
      */
     public function getImagesList(Image $from, int $nb): array
     {
-        $offset = $this->images->indexOf($from);
+        $needle = null;
+        foreach ($this->images->asArray() as $image){
+            if($from->getId() === $image->getId()){
+                $needle = $image;
+            }
+        }
+
+        if($needle === null){
+            throw new \Exception("Category::getImageList {$from->getURL()} does not exists in {$this->getName()}");
+        }
+
+        $offset = $this->images->indexOf($needle);
 
         if($offset < 0){
             $offset = 0;
@@ -88,10 +100,22 @@ class Category
      * @param Image $img
      * @param int|null $nb
      * @return Image
+     * @throws \Exception
      */
     function jumpToImage(Image $img, ?int $nb = 1): Image
     {
-        $index = $this->images->indexOf($img);
+        $needle = null;
+        foreach ($this->images->asArray() as $image){
+            if($img->getId() === $image->getId()){
+                $needle = $image;
+            }
+        }
+
+        if( $needle === null){
+            throw new \Exception("Category::getImageList {$img->getURL()} does not exists in {$this->getName()}");
+        }
+
+        $index = $this->images->indexOf($needle);
         $offset = $index + $nb;
 
         // oob negatif
@@ -112,6 +136,6 @@ class Category
      */
     public function getRandomImage(): Image
     {
-        return $this->images->get(rand(0, $this->images->length()));
+        return $this->images->get(rand(0, $this->images->length() - 1));
     }
 }

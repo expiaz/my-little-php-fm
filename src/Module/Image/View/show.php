@@ -22,10 +22,21 @@
 
 <?= $renderer->render('@layout/header') ?>
 
-    <p>
-        <a href="<?= $router->build('image.jump', ['forward' => 0, 'image' => $image->getId()]) ?>">Prev</a>
-        <a href="<?= $router->build('image.jump', ['forward' => 1, 'image' => $image->getId()]) ?>">Next</a>
+    <div>
+        <nav>
+            <a href="<?= $router->build('image.jump', ['forward' => 0, 'image' => $image->getId()]) ?>">Prev</a>
+            <a href="<?= $router->build('image.jump', ['forward' => 1, 'image' => $image->getId()]) ?>">Next</a>
+        </nav>
         <img src="<?= $image->getURL(); ?>"/>
-    </p>
+        <p>Catégorie :
+            <?php if($image->getCategory() !== null): ?>
+                <a href="<?= $router->build('category.show', ['category' => $image->getCategory()->getId()]) ?>">
+                    <?= $image->getCategory()->getName() ?>
+                </a>
+            <?php else: ?>
+                Aucune
+            <?php endif;?>
+        </p>
+    </div>
 
 <?= $renderer->render('@layout/footer') ?>

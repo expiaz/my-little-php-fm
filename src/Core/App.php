@@ -51,7 +51,7 @@ class App
 
         $dispatcher = new Dispatcher($this->container);
 
-        return $dispatcher->dispatch($match->getRoute()->getHandler(), Request::fromMatch($match));
+        return $dispatcher->dispatch($match->getRoute(), Request::fromMatch($match));
     }
 
 }

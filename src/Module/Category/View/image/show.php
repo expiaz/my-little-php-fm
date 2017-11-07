@@ -13,7 +13,7 @@
  * @var $category \App\Module\Category\Model\Entity\Category the current category
  */
 /**
- * @var $img \App\Module\Image\Model\Entity\Image the current image
+ * @var $image \App\Module\Image\Model\Entity\Image the current image
  */
 /**
  * @var $size int the size of the image
@@ -25,18 +25,33 @@
 
 <?= $renderer->render('@layout/header') ?>
 
-    <p>
-        <a href="<?= $router->build('category.image.jump', [
-            'category' => $category->getId(),
-            'forward' => 0,
-            'image' => $img->getId(),
-        ]) ?>">Prev</a>
-        <a href="<?= $router->build('category.image.jump', [
-            'category' => $category->getId(),
-            'forward' => 1,
-            'image' => $img->getId(),
-        ]) ?>">Next</a>
-        <img src="<?= $img->getURL(); ?>"/>
-    </p>
+    <div>
+        <nav>
+            <a href="<?= $router->build('category.image.jump', [
+                'category' => $category->getId(),
+                'forward' => 0,
+                'image' => $image->getId(),
+            ]) ?>">Prev</a>
+            <a href="<?= $router->build('category.image.jump', [
+                'category' => $category->getId(),
+                'forward' => 1,
+                'image' => $image->getId(),
+            ]) ?>">Next</a>
+        </nav>
+        <img src="<?= $image->getURL(); ?>"/>
+        <p>Catégorie :
+            <?php if($image->getCategory() !== null): ?>
+                <a href="<?= $router->build('category.show', ['category' => $image->getCategory()->getId()]) ?>">
+                    <?= $image->getCategory()->getName() ?>
+                </a>
+            <?php else: ?>
+                Aucune
+            <?php endif;?>
+        </p>
+        <!--<p>
+            <i class="fa fa-up"></i> <?/*= $image->getUpvotes() */?> Upvotes <br/>
+            <i class="fa fa-down"></i> <?/*= $image->getDownvotes() */?> Downvotes <br/>
+        </p>-->
+    </div>
 
 <?= $renderer->render('@layout/footer') ?>

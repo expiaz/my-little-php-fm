@@ -3,6 +3,7 @@
 namespace Tests\Module\Image\Model\Repository;
 
 
+use App\Core\Bootstraper;
 use App\Module\Image\Model\Entity\Image;
 use App\Module\Image\Model\Repository\AbstractDAO;
 use App\Module\Image\Model\Repository\DbImageDAO;
@@ -18,7 +19,8 @@ class ImageDAOTest extends TestCase
 
     protected function setUp()
     {
-        $this->dao = new DbImageDAO();
+        $boot = new Bootstraper(TEST . 'config.php');
+        $this->dao = new DbImageDAO($boot->bootstrap());
     }
 
     public function testGetImage()

@@ -84,10 +84,21 @@ class DbImageDAO extends AbstractDAO
             "id" => $upplet->category
         ]);
 
+        $r = $query->fetchAll();
+
+        if(count($r)){
+            $category = $r[0];
+            return new Image(
+                static::URL_PATH . $upplet->name,
+                $upplet->id,
+                new Category($this->categoryDao, $category->id, $category->name)
+            );
+        }
+
         return new Image(
             static::URL_PATH . $upplet->name,
             $upplet->id,
-            new Category($this->categoryDao, $upplet->id, $upplet->name)
+            null
         );
     }
 }

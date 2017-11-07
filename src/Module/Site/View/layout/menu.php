@@ -36,29 +36,29 @@
                 ]) ?>">Image au hasard dans la catégorie</a></li>
             <li><a href="<?= $router->build('category.image.grid', [
                     'category' => $category->getId(),
-                    'image' => $img->getId()
+                    'image' => $image->getId()
                 ]) ?>">Plus d'images de la catégorie</a></li>
 
         <?php else: ?> <!-- grid -->
 
-            <li><a href="<?= $router->build('image.first', [
+            <li><a href="<?= $router->build('category.image.first', [
                     'category' => $category->getId(),
                     'nb' => $nb
                 ]) ?>">Premières images de la catégorie</a></li>
-            <li><a href="<?= $router->build('image.random', [
+            <li><a href="<?= $router->build('category.image.random', [
                     'category' => $category->getId(),
-                    'image' => $img->getId(),
+                    'image' => $image->getId(),
                     'nb' => $nb
                 ]) ?>">Images au hasard dans la catégorie</a></li>
-            <li><a href="<?= $router->build('image.grid', [
+            <li><a href="<?= $router->build('category.image.grid', [
                     'category' => $category->getId(),
-                    'image' => $img->getId(),
+                    'image' => $image->getId(),
                     'nb' => $nextNb
                 ]) ?>">Encore plus d'images de la catégorie</a></li>
 
         <?php endif; ?>
 
-    <?php elseif($context->get('img') === null): ?> <!-- home -->
+    <?php elseif($context->get('image') === null): ?> <!-- home -->
 
         <!--<li><a href="<?/*= $router->build('image.show') */?>">Voir Photos</a></li>
         <li><a href="<?/*= $router->build('category.list') */?>">Voir Catégories</a></li>-->
@@ -67,10 +67,10 @@
 
         <li><a href="<?= $router->build('image.first') ?>">Première image</a></li>
         <li><a href="<?= $router->build('image.random', [
-                'id' => $img->getId()
+                'image' => $image->getId()
             ]) ?>">Image au hasard</a></li>
         <li><a href="<?= $router->build('image.grid', [
-                'id' => $img->getId()
+                'image' => $image->getId()
             ]) ?>">Plus d'images</a></li>
 
     <?php else: ?> <!-- image -->
@@ -79,11 +79,11 @@
                 'nb' => $nb
             ]) ?>">Premières images</a></li>
         <li><a href="<?= $router->build('image.random', [
-                'id' => $img->getId(),
+                'image' => $image->getId(),
                 'nb' => $nb
             ]) ?>">Images au hasard</a></li>
         <li><a href="<?= $router->build('image.grid', [
-                'id' => $img->getId(),
+                'image' => $image->getId(),
                 'nb' => $nextNb
             ]) ?>">Plus d'images</a></li>
 
@@ -91,5 +91,20 @@
 
     <li><a href="<?= $router->build('image.show') ?>">Voir Photos</a></li>
     <li><a href="<?= $router->build('category.list') ?>">Voir Catégories</a></li>
+    <li><form action="<?= $router->build('category.search') ?>" method="GET">
+            <input type="search" name="q" placeholder="chercher par catégorie" list="cats">
+            <input type="submit" value="ok">
+            <datalist id="cats">
+                <option>Cat</option>
+            </datalist>
+        </form>
+    </li>
+    <li>
+        <?php if(\App\Core\Http\Session::getInstance()->has('user')): ?>
+            <a href="<?= $router->build('user.deco') ?>">Déconnexion</a>
+        <?php else: ?>
+            <a href="<?= $router->build('user.auth') ?>">Connexion</a>
+        <?php endif; ?>
+    </li>
 
 </ul>

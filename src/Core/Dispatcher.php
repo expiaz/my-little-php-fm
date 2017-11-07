@@ -2,11 +2,11 @@
 
 namespace App\Core;
 
-use App\Core\Exception\ClassNotFoundException;
-use App\Core\Exception\MethodNotFoundException;
 use App\Core\Http\Request;
 use App\Core\Http\Response;
-use InvalidArgumentException;
+use App\Core\Http\Router\Middleware;
+use App\Core\Http\Router\Route;
+use App\Core\Utils\Resolver;
 
 class Dispatcher
 {
@@ -18,50 +18,25 @@ class Dispatcher
     }
 
     /**
-     * parse and resolve $handler (such as Ns\Class::method become [Ns\Class(), method])
-     * @param string $handler
-     * @return array
-     * @throws ClassNotFoundException
-     * @throws MethodNotFoundException
-     */
-    public function resolve(string $handler): array
-    {
-        if (($pos = strpos($handler, '::')) === false) {
-            throw new InvalidArgumentException("[Dispatcher::resolve] $handler is not a valid handler");
-        }
-
-        $controller = substr($handler, 0, $pos);
-        $action = substr($handler, $pos + 2);
-
-        if (! class_exists($controller)) {
-            throw new ClassNotFoundException("$controller does not exists", $controller);
-        }
-
-        //let's now ensure that the method exists
-        if (!method_exists($controller, $action)) {
-            throw new MethodNotFoundException("$action does not exists in $controller", $action);
-        }
-
-        return [$controller, $action];
-    }
-
-    /**
      * resolve then dispatch the given request to the handler, send back the response from the handler
-     * @param string $handler Ns\Class::method
+     * @param Route $route
      * @param Request $request
      * @return Response
      */
-    public function dispatch(string $handler, Request $request): Response
+    public function dispatch(Route $route, Request $request): Response
     {
-        $pieces = $this->resolve($handler);
-
-        if (count($pieces) === 0) {
-            throw new InvalidArgumentException("$handler is not a valid handler");
+        /**
+         * @var $resolver Resolver
+         */
+        $resolver = $this->container->get(Resolver::class);
+        $middlewareHandlers = $route->getMiddlewares();
+        // route middleware to call it's handler
+        $head = new Middleware($resolver, $route->getHandler(), null);
+        // let's build a linked list from the bottom to the top
+        while(! $middlewareHandlers->empty()){
+            $head = new Middleware($resolver, $middlewareHandlers->pop(), $head);
         }
 
-        $controller = $pieces[0];
-        $action = $pieces[1];
-
-        return (new $controller($this->container))->$action($request);
+        return $head->call($request);
     }
 }

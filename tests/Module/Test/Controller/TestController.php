@@ -35,4 +35,27 @@ class TestController extends BaseController
         ]));
     }
 
+    /**
+     * @param Request $request
+     * @return Response
+     */
+    public function breakMiddleware(Request $request): Response
+    {
+        return new Response(300, [], 'middleware');
+    }
+
+    /**
+     * @param Request $request
+     * @return Request
+     */
+    public function chainedMiddleware(Request $request): Request
+    {
+        $request->getParameters()->set('middleware', 'value');
+        return $request;
+    }
+
+    public function a(){}
+    public function b(){}
+    public function c(){}
+
 }
