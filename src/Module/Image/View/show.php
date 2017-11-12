@@ -37,6 +37,15 @@
                 Aucune
             <?php endif;?>
         </p>
+        <p>Auteur :
+            <?php if($image->getAuthor() !== null): ?>
+                <a href="<?= $router->build('user.show', ['user' => $image->getAuthor()->getId()]) ?>">
+                    <?= $image->getAuthor()->getName() ?>
+                </a>
+            <?php else: ?>
+                Aucun
+            <?php endif;?>
+        </p>
     </div>
 
 <?= $renderer->render('@layout/footer') ?>

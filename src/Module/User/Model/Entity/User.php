@@ -2,6 +2,10 @@
 
 namespace App\Module\User\Model\Entity;
 
+use App\Core\Utils\Collection;
+use App\Module\Image\Model\Repository\DbImageDAO;
+use App\Module\User\Model\Repository\UserDAO;
+
 class User {
 
     /**
@@ -12,11 +16,21 @@ class User {
      * @var string
      */
     private $name;
+    /**
+     * @var Collection<Image>
+     */
+    private $images;
 
-    public function __construct(int $id, string $name)
+    /**
+     * @var DbImageDAO
+     */
+    private $imageDao;
+
+    public function __construct(DbImageDAO $dao, int $id, string $name)
     {
         $this->id = $id;
         $this->name = $name;
+        $this->imageDao = $dao;
     }
 
     /**
@@ -33,6 +47,17 @@ class User {
     public function getName(): string
     {
         return $this->name;
+    }
+
+    /**
+     * @return Collection<Image>
+     */
+    public function getImages(): Collection
+    {
+        if($this->images === null) {
+            $this->images = new Collection($this->imageDao->getByAuthor($this));
+        }
+        return $this->images;
     }
 
 }

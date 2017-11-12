@@ -3,11 +3,29 @@
 namespace App\Module\User\Model\Repository;
 
 use App\Core\BaseDAO;
+use App\Module\Category\Model\Repository\CategoryDAO;
+use App\Module\Image\Model\Entity\Image;
+use App\Module\Image\Model\Repository\DbImageDAO;
 use App\Module\User\Model\Entity\User;
+use stdClass;
 
 class UserDAO extends BaseDAO {
 
     protected $table = 'users';
+
+    /**
+     * @param stdClass $upplet
+     * @return User
+     */
+    public function build(stdClass $upplet): User
+    {
+        if($this->resolved->has($upplet->id)){
+            return $this->resolved->get($upplet->id);
+        }
+        $user = new User($this->container->get(DbImageDAO::class), $upplet->id, $upplet->name);
+        $this->resolved->set($upplet->id, $user);
+        return $user;
+    }
 
     /**
      * authenticate an user
@@ -17,7 +35,7 @@ class UserDAO extends BaseDAO {
      */
     public function auth(string $login, string $pwd): ?User
     {
-        $encrypted = password_hash(
+        $encrypted = @password_hash(
             $pwd,
             PASSWORD_BCRYPT,
             [
@@ -36,19 +54,14 @@ class UserDAO extends BaseDAO {
         return $this->getUser($upplet->id);
     }
 
-    public function getUser($id): ?User
+    public function getUser($id): User
     {
         $query = $this->getById($id);
         if(! $query->haveResult()){
-            return null;
+            throw new \Exception("UserDAO::getUser $id does not exists");
         }
-        $upplet = $query->getResult();
-        return new User($upplet->id, $upplet->name);
+        return $this->build($query->getResult());
     }
 
-    public function createUser(): bool
-    {
-
-    }
 
 }

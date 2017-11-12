@@ -3,12 +3,11 @@
 namespace App\Module\Category\Model\Entity;
 
 use App\Core\Utils\Collection;
-use App\Module\CAtegory\Model\Repository\CategoryDAO;
 use App\Module\Image\Model\Entity\Image;
+use App\Module\Image\Model\Repository\DbImageDAO;
+use Exception;
 
 /**
- * no lazy initialization for collections, because it'll need to add a field for the dao in the class, i prefered keeping it in constructor
- * Class Category
  * @package App\Module\Category\Model\Entity
  */
 class Category
@@ -26,13 +25,18 @@ class Category
     /**
      * @var Collection<Image> the images of the category
      */
-    private $images;
+    private $images = null;
 
-    public function __construct(CategoryDAO $categoryDAO, int $id, string $name)
+    /**
+     * @var DbImageDAO
+     */
+    private $imageDao;
+
+    public function __construct(DbImageDAO $dao, int $id, string $name)
     {
         $this->id = $id;
         $this->name = $name;
-        $this->images = new Collection($categoryDAO->getImages($this));
+        $this->imageDao = $dao;
     }
 
     /**
@@ -56,6 +60,9 @@ class Category
      */
     public function getImages(): Collection
     {
+        if($this->images === null) {
+            $this->images = new Collection($this->imageDao->getByCategory($this));
+        }
         return $this->images;
     }
 
@@ -63,36 +70,36 @@ class Category
      * @param Image $from
      * @param int $nb
      * @return array
-     * @throws \Exception
+     * @throws Exception
      */
     public function getImagesList(Image $from, int $nb): array
     {
         $needle = null;
-        foreach ($this->images->asArray() as $image){
+        foreach ($this->getImages()->asArray() as $image){
             if($from->getId() === $image->getId()){
                 $needle = $image;
             }
         }
 
         if($needle === null){
-            throw new \Exception("Category::getImageList {$from->getURL()} does not exists in {$this->getName()}");
+            throw new Exception("Category::getImageList {$from->getURL()} does not exists in {$this->getName()}");
         }
 
-        $offset = $this->images->indexOf($needle);
+        $offset = $this->getImages()->indexOf($needle);
 
         if($offset < 0){
             $offset = 0;
         }
 
-        if($offset > $this->images->length()){
-            $offset = $this->images->length() - 1;
+        if($offset > $this->getImages()->length()){
+            $offset = $this->getImages()->length() - 1;
         }
 
-        if($offset + $nb > $this->images->length()){
-            $nb = $this->images->length() - $offset;
+        if($offset + $nb > $this->getImages()->length()){
+            $nb = $this->getImages()->length() - $offset;
         }
 
-        return array_slice($this->images->asArray(), $offset, $nb);
+        return array_slice($this->getImages()->asArray(), $offset, $nb);
     }
 
     /**
@@ -100,31 +107,31 @@ class Category
      * @param Image $img
      * @param int|null $nb
      * @return Image
-     * @throws \Exception
+     * @throws Exception
      */
     function jumpToImage(Image $img, ?int $nb = 1): Image
     {
         $needle = null;
-        foreach ($this->images->asArray() as $image){
+        foreach ($this->getImages()->asArray() as $image){
             if($img->getId() === $image->getId()){
                 $needle = $image;
             }
         }
 
         if( $needle === null){
-            throw new \Exception("Category::getImageList {$img->getURL()} does not exists in {$this->getName()}");
+            throw new Exception("Category::getImageList {$img->getURL()} does not exists in {$this->getName()}");
         }
 
-        $index = $this->images->indexOf($needle);
+        $index = $this->getImages()->indexOf($needle);
         $offset = $index + $nb;
 
         // oob negatif
         if($nb < 0 && $offset < 0){
-            $to = $this->images->first();
-        } else if($nb >= 0 && $offset > $this->images->length()){ // oob positif
-            $to = $this->images->last();
+            $to = $this->getImages()->first();
+        } else if($nb >= 0 && $offset >= $this->getImages()->length()){ // oob positif
+            $to = $this->getImages()->last();
         } else { // nominal
-            $to = $this->images->get($offset);
+            $to = $this->getImages()->get($offset);
         }
 
         return $to;
@@ -136,6 +143,6 @@ class Category
      */
     public function getRandomImage(): Image
     {
-        return $this->images->get(rand(0, $this->images->length() - 1));
+        return $this->getImages()->get(rand(0, $this->getImages()->length() - 1));
     }
 }

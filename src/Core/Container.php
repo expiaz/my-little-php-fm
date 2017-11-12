@@ -18,6 +18,14 @@ class Container implements ArrayAccess
      */
     private $resolver;
 
+    private static $instance = null;
+
+    public static function getInstance(): Container {
+        return self::$instance !== null
+            ? self::$instance
+            : self::$instance = new Container();
+    }
+
     public function __construct()
     {
         $this->resolved = [];

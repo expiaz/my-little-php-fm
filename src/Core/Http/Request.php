@@ -4,6 +4,7 @@ namespace App\Core\Http;
 
 use App\Core\Http\Router\Match;
 use App\Core\Utils\ParameterBag;
+use App\Core\Utils\UploadedFile;
 
 class Request
 {
@@ -17,6 +18,7 @@ class Request
     private $method;
     private $query;
     private $request;
+    private $files;
     private $parameters;
 
     /**
@@ -29,7 +31,8 @@ class Request
             WEBMETHOD,
             WEBURL,
             $_GET,
-            $_POST
+            $_POST,
+            $_FILES
         );
     }
 
@@ -40,6 +43,7 @@ class Request
             WEBURL,
             $_GET,
             $_POST,
+            $_FILES,
             $match->getParameters()->asArray()
         );
     }
@@ -50,6 +54,7 @@ class Request
      * @param string $url
      * @param array|null $query
      * @param array|null $request
+     * @param array|null $files
      * @param array|null $parameters
      */
     public function __construct(
@@ -57,6 +62,7 @@ class Request
         string $url,
         ?array $query = [],
         ?array $request = [],
+        ?array $files = [],
         ?array $parameters = []
     )
     {
@@ -64,6 +70,7 @@ class Request
         $this->method = $this->guessMethod($method);
         $this->query = new ParameterBag($query);
         $this->request = new ParameterBag($request);
+        $this->files = UploadedFile::fromArray($files);
         $this->parameters = new ParameterBag($parameters);
     }
 
@@ -114,6 +121,14 @@ class Request
     public function getParsedBody(): ParameterBag
     {
         return $this->request;
+    }
+
+    /**
+     * @return ParameterBag
+     */
+    public function getUploadedFiles(): ParameterBag
+    {
+        return $this->files;
     }
 
     /**

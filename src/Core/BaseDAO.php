@@ -2,12 +2,13 @@
 
 namespace App\Core;
 
+use App\Core\Utils\Collection;
 use App\Core\Utils\Query;
 use PDO;
+use stdClass;
 
-class BaseDAO
+abstract class BaseDAO
 {
-
     protected $table = 'NO_OP';
 
     /**
@@ -16,13 +17,36 @@ class BaseDAO
     protected $pdo;
 
     /**
-     * BaseDAO constructor.
-     * @param PDO $pdo
+     * @var Container
      */
-    public function __construct(PDO $pdo)
+    protected $container;
+
+    /**
+     * @var Collection
+     */
+    protected $resolved;
+
+    protected $imagesPath;
+    protected $imagesUrl;
+
+    /**
+     * BaseDAO constructor.
+     * @param Container $container
+     */
+    public function __construct(Container $container)
     {
-        $this->pdo = $pdo;
+        $this->container = $container;
+        $this->pdo = $container->get(PDO::class);
+        $this->imagesPath = $container->get('config')->get('image.path');
+        $this->imagesUrl = $container->get('config')->get('image.url');
+        $this->resolved = new Collection();
     }
+
+    /**
+     * @param stdClass $upplet
+     * @return mixed
+     */
+    public abstract function build(stdClass $upplet);
 
     /**
      * @param string $statement
@@ -34,7 +58,11 @@ class BaseDAO
         return (new Query($this->pdo, $statement))->execute($bindings);
     }
 
-    protected function getById($id)
+    /**
+     * @param $id
+     * @return Query
+     */
+    public function getById($id): Query
     {
         return (new Query(
             $this->pdo,

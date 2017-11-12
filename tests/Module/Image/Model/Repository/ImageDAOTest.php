@@ -4,6 +4,7 @@ namespace Tests\Module\Image\Model\Repository;
 
 
 use App\Core\Bootstraper;
+use App\Core\Container;
 use App\Module\Image\Model\Entity\Image;
 use App\Module\Image\Model\Repository\AbstractDAO;
 use App\Module\Image\Model\Repository\DbImageDAO;
@@ -17,10 +18,16 @@ class ImageDAOTest extends TestCase
      */
     private $dao;
 
+    /**
+     * @var Container
+     */
+    private $container;
+
     protected function setUp()
     {
-        $boot = new Bootstraper(TEST . 'config.php');
-        $this->dao = new DbImageDAO($boot->bootstrap());
+        $boot = new Bootstraper(TEST_CONFIG_FILE);
+        $this->container = $boot->bootstrap();
+        $this->dao = new DbImageDAO($this->container);
     }
 
     public function testGetImage()
@@ -36,7 +43,7 @@ class ImageDAOTest extends TestCase
     public function testReadDir()
     {
 
-        $files = AbstractDAO::scanDir(PUBLIK . 'assets/img');
+        $files = DbImageDAO::scanDir($this->container->get('config')->get('image.path'));
 
         self::assertContains(
             "/pictures/airshow_23_bg_101400.jpg",

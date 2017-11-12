@@ -36,6 +36,24 @@ class ParameterBag implements ArrayAccess, \Countable, \Iterator
      */
     public function set(string $key, $value): void
     {
+        // nested namespaces
+        if(strpos($key, '.') !== false) {
+            $keys = explode('.', $key);
+            $ctx = $this->asArray();
+            foreach ($keys as $k) {
+                // need to find $k in $ctx and $ctx not an array, $k not found
+                if(! is_array($ctx) || ! array_key_exists($k, $ctx)) {
+                    return;
+                }
+                // next nesting level
+                $ctx = $ctx[$k];
+            }
+            if(is_array($ctx)) {
+                $ctx[$key] = $value;
+            }
+            return;
+        }
+
         $this->fields[$key] = $value;
     }
 
@@ -47,8 +65,21 @@ class ParameterBag implements ArrayAccess, \Countable, \Iterator
     public function get(string $key, $default = null)
     {
         if(! $this->has($key)){
-            return $default;
+            // maybe nested namespaces with . like a.b.c is => a[b[c]]
+            $keys = explode('.', $key);
+            $ctx = $this->asArray();
+            foreach ($keys as $k) {
+                // need to find $k in $ctx and $ctx not an array, $k not found
+                if(! is_array($ctx) || ! array_key_exists($k, $ctx)) {
+                    return $default;
+                }
+                // next nesting level
+                $ctx = $ctx[$k];
+            }
+
+            return $ctx;
         }
+
         return $this->fields[$key];
     }
 

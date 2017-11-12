@@ -23,10 +23,10 @@ final class RouteBag
 
     /**
      * adds a middleware to every contained route
-     * @param Middleware $middleware
+     * @param string $middleware
      * @return RouteBag
      */
-    public function use(Middleware $middleware): RouteBag
+    public function use(string $middleware): RouteBag
     {
         foreach ($this->routes as $route){
             $route->use($middleware);

@@ -73,19 +73,20 @@ class Renderer{
 
         // namespaced like '@ns/view'
         if($path[0] === '@'){
+            // 'ns'
             $ns = $this->substring($path, 1, strpos($path, '/'));
             if(! isset($this->namespaces[$ns])){
                 throw new InvalidArgumentException("$ns is not a valid namespace for a view");
             }
             // '@ns/view' => 'filepath/view'
-            $view = str_replace('@' . $ns, $this->namespaces[$ns], $path);
+            $view = str_replace("@$ns", $this->namespaces[$ns], $path);
         } else {
             // '/view' => 'defaultpath/view'
             $view = $this->namespaces[self::DEFAUT_NS] . $path;
         }
 
         // 'filepath/view' => filepath/view.php'
-        $file = $view . '.php';
+        $file = "$view.php";
 
         if(! file_exists($file)){
             throw new InvalidArgumentException("$file is not a valid file for a view");
@@ -120,10 +121,10 @@ class Renderer{
     }
 
     /**
-     * @param string $view
-     * @param array|null $context
+     * @param string $view name of the view + ns
+     * @param array|null $context variables for the view
      * @param bool|null $isolate does the current context don't have to be merged with parent's one
-     * @return string
+     * @return string the rendered view
      * @throws Exception
      */
     public function render(string $view, ?array $context = [], ?bool $isolate = false): string
@@ -142,7 +143,7 @@ class Renderer{
             );
         }
 
-        // delete this variable of table symbol, to prevent it from interfering with view variables
+        // delete these variables from table symbol, to prevent it from interfering with view variables
         unset($view, $isolate);
 
         // push the view's context

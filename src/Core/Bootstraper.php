@@ -11,7 +11,7 @@ class Bootstraper
 {
     private $config;
 
-    public function __construct(string $configFile)
+    public function __construct(string $configFile = CONFIG_FILE)
     {
         if(! file_exists($configFile)){
             throw new \InvalidArgumentException("$configFile does not exists");
@@ -25,9 +25,13 @@ class Bootstraper
         }
     }
 
+    /**
+     * scaffhold the container and return it
+     * @return Container
+     */
     public function bootstrap(): Container
     {
-        $container = new Container();
+        $container = Container::getInstance();
         $renderer = new Renderer();
         $router = new Router();
 
@@ -38,9 +42,9 @@ class Bootstraper
         $container[Renderer::class] = $renderer;
         $container[Router::class] = $router;
         $container[PDO::class] = new PDO(
-            "sqlite:" . DbImageDAO::DB_PATH,
-            null,
-            null,
+            "sqlite:" . $this->config->get('database.path'),
+            $this->config->get('database.user'),
+            $this->config->get('database.pwd'),
             [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ

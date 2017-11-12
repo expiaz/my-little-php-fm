@@ -91,7 +91,8 @@
 
     <li><a href="<?= $router->build('image.show') ?>">Voir Photos</a></li>
     <li><a href="<?= $router->build('category.list') ?>">Voir Catégories</a></li>
-    <li><form action="<?= $router->build('category.search') ?>" method="GET">
+    <li>
+        <form action="<?= $router->build('category.search') ?>" method="GET">
             <input type="search" name="q" placeholder="chercher par catégorie" list="cats">
             <input type="submit" value="ok">
             <datalist id="cats">
@@ -99,12 +100,11 @@
             </datalist>
         </form>
     </li>
-    <li>
-        <?php if(\App\Core\Http\Session::getInstance()->has('user')): ?>
-            <a href="<?= $router->build('user.deco') ?>">Déconnexion</a>
-        <?php else: ?>
-            <a href="<?= $router->build('user.auth') ?>">Connexion</a>
-        <?php endif; ?>
-    </li>
+    <?php if(\App\Core\Http\Session::getInstance()->has('user')): ?>
+        <li><a href="<?= $router->build('image.add') ?>">Ajouter une image</a></li>
+        <li><a href="<?= $router->build('user.deco') ?>">Déconnexion</a></li>
+    <?php else: ?>
+        <li><a href="<?= $router->build('user.auth') ?>">Connexion</a></li>
+    <?php endif; ?>
 
 </ul>

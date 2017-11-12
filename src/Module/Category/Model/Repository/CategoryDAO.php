@@ -2,45 +2,66 @@
 
 namespace App\Module\Category\Model\Repository;
 
-use App\Core\Container;
+use App\Core\BaseDAO;
 use App\Core\Utils\Collection;
 use App\Module\Category\Model\Entity\Category;
-use App\Module\Image\Model\Entity\Image;
-use App\Module\Image\Model\Repository\AbstractDAO;
-use PDO;
+use App\Module\Image\Model\Repository\DbImageDAO;
+use Exception;
+use stdClass;
 
-class CategoryDAO
+class CategoryDAO extends BaseDAO
 {
 
-    /**
-     * @var PDO
-     */
-    private $pdo;
+    protected $table = 'category';
 
     /**
-     * CategoryDAO constructor.
-     * @param Container $container
+     * @param stdClass $upplet
+     * @return Category
      */
-    public function __construct(Container $container)
+    public function build(stdClass $upplet): Category
     {
-        $this->pdo = $container->get(PDO::class);
+        if ($this->resolved->has($upplet->id)) {
+            return $this->resolved->get($upplet->id);
+        }
+        $cat = new Category($this->container->get(DbImageDAO::class), $upplet->id, $upplet->name);
+        $this->resolved->set($upplet->id, $cat);
+        return $cat;
+    }
+
+    /**
+     * @param string $name
+     * @return Category
+     */
+    public function addCategory(string $name): Category
+    {
+        $this->query("INSERT INTO category VALUES (NULL, :name)", [
+            'name' => $name
+        ]);
+
+        $c = new Category(
+            $this->container->get(DbImageDAO::class),
+            $this->pdo->lastInsertId(),
+            $name
+        );
+        $this->resolved[$c->getId()] = $c;
+
+        return $c;
     }
 
     /**
      * @param int $id
      * @return Category
+     * @throws Exception
      */
     public function getCategory(int $id)
     {
-        $sql = "SELECT * FROM category WHERE id = :id";
-        $query = $this->pdo->prepare($sql);
-        $query->execute([
-            'id' => $id
-        ]);
+        $cat = $this->getById($id)->getResult();
 
-        $upplet = $query->fetch();
+        if ($cat === null) {
+            throw new Exception("Category $id not found");
+        }
 
-        return new Category($this, $upplet->id, $upplet->name);
+        return $this->build($cat);
     }
 
     /**
@@ -48,36 +69,9 @@ class CategoryDAO
      */
     public function getCategories(): Collection
     {
-        $sql = "SELECT * FROM category";
-        $query = $this->pdo->prepare($sql);
-        $query->execute();
-
-        $categories = [];
-        foreach ($query->fetchAll() as $category){
-            $categories[] = $this->getCategory($category->id);
-        }
-
-        return new Collection($categories);
-    }
-
-    /**
-     * @param Category $category
-     * @return Image[]
-     */
-    public function getImages(Category $category)
-    {
-        $sql = "SELECT * FROM images WHERE category = :id";
-        $query = $this->pdo->prepare($sql);
-        $query->execute([
-            'id' => $category->getId()
-        ]);
-
-        $images = [];
-        foreach ($query->fetchAll() as $image) {
-            $images[] = new Image(AbstractDAO::URL_PATH . $image->name, $image->id, $category);
-        }
-
-        return $images;
+        return new Collection(array_map(function ($upplet): Category {
+            return $this->build($upplet);
+        }, $this->query('SELECT * FROM category')->getResults()));
     }
 
     /**
@@ -87,19 +81,11 @@ class CategoryDAO
      */
     public function searchCategories(string $name): array
     {
-        $sql = "SELECT * FROM category WHERE name LIKE ?";
-        $query = $this->pdo->prepare($sql);
-        $query->execute([
+        return array_map(function ($upplet): Category {
+            return $this->build($upplet);
+        }, $this->query("SELECT * FROM category WHERE name LIKE ?", [
             "%$name%"
-        ]);
-
-        $results = $query->fetchAll();
-        $categories = [];
-        foreach ($results as $result){
-            $categories[] = new Category($this, $result->id, $result->name);
-        }
-
-        return $categories;
+        ])->getResults());
     }
 
 }

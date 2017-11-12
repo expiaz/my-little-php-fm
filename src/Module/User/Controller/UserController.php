@@ -37,9 +37,21 @@ class UserController extends BaseController
     public static function register(Container $container, Router $router, Renderer $renderer): void
     {
         $renderer->addNamespace('user', self::MODULE_PATH . 'View');
+        $router->get('/user/{user: \d+}', UserController::class . '::show', 'user.show');
+
         $router->get('/auth', UserController::class . '::auth', 'user.auth');
         $router->post('/auth', UserController::class . '::auth', 'user.auth.post');
-        $router->get('/deco', UserController::class . '::deconnection', 'user.deco');
+        $router->get('/deco', UserController::class . '::deconnection', 'user.deco')
+            ->use(UserController::class . '::isAuth');
+    }
+
+    public function isAuth(Request $request) {
+        $session = Session::getInstance();
+        if ($session->has('user')) {
+            $request->getParameters()->set('user', $session->get('user'));
+            return $request;
+        }
+        return (new Response())->withRedirect($this->router->build('user.auth'));
     }
 
     public function auth(Request $request): Response
@@ -82,6 +94,12 @@ class UserController extends BaseController
     {
         Session::getInstance()->delete('user');
         return (new Response())->withRedirect($this->router->build('site.home'));
+    }
+
+    public function show(Request $request): Response {
+        return new Response(200, [], $this->renderer->render('@user/show', [
+            'user' => $this->dao->getUser($request->getParameters()->get('user'))
+        ]));
     }
 
 }

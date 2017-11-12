@@ -39,6 +39,9 @@
             ]) ?>">Next</a>
         </nav>
         <img src="<?= $image->getURL(); ?>"/>
+        <blockquote>
+            <?= $image->getDescription() ?>
+        </blockquote>
         <p>Catégorie :
             <?php if($image->getCategory() !== null): ?>
                 <a href="<?= $router->build('category.show', ['category' => $image->getCategory()->getId()]) ?>">
@@ -48,10 +51,26 @@
                 Aucune
             <?php endif;?>
         </p>
+        <p>Auteur :
+            <?php if($image->getAuthor() !== null): ?>
+                <a href="<?= $router->build('user.show', ['user' => $image->getAuthor()->getId()]) ?>">
+                    <?= $image->getAuthor()->getName() ?>
+                </a>
+            <?php else: ?>
+                Aucun
+            <?php endif;?>
+        </p>
         <!--<p>
             <i class="fa fa-up"></i> <?/*= $image->getUpvotes() */?> Upvotes <br/>
             <i class="fa fa-down"></i> <?/*= $image->getDownvotes() */?> Downvotes <br/>
         </p>-->
     </div>
+    <!--<section>
+        <ul>
+            <?php /*foreach ($image->getComments() as $comment): */?>
+
+            <?php /*endforeach; */?>
+        </ul>
+    </section>-->
 
 <?= $renderer->render('@layout/footer') ?>
